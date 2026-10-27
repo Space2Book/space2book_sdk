@@ -1,0 +1,43 @@
+{
+  "name": "@space2book/sdk",
+  "version": "0.1.0",
+  "description": "Lightweight, accessible Space2Book booking integrations",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/space2book.min.js",
+  "jsdelivr": "./dist/space2book.min.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --emitDeclarationOnly && esbuild src/index.ts --bundle --format=esm --target=es2020 --outfile=dist/index.js && esbuild src/browser.ts --bundle --format=iife --target=es2020 --minify --outfile=dist/space2book.min.js",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "prepack": "npm run typecheck && npm test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Space2Book/space2book_sdk.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "jsdom": "26.1.0",
+    "typescript": "5.9.3"
+  }
+}
