@@ -1,7 +1,7 @@
 import { createEmbed } from './embed';
 import { translate } from './i18n';
 import { createModal } from './modal';
-import { brandColor, publicUrl } from './security';
+import { brandColor, brandTextColor, publicUrl } from './security';
 import { styles } from './styles';
 import type { BookingSDK, EmbedHandle, SDKOptions } from './types';
 
@@ -20,6 +20,7 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
   }
   const handles = new Set<EmbedHandle>();
   let modal: EmbedHandle | undefined;
+  let modalGeneration = 0;
   let destroyed = false;
   const assertActive = () => {
     if (destroyed) throw new Error('This Space2Book instance has been destroyed.');
@@ -31,6 +32,7 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
     assertActive();
     const host = container.ownerDocument.createElement('div');
     host.style.setProperty('--s2b-color', brandColor(options.branding?.color));
+    host.style.setProperty('--s2b-contrast', brandTextColor(brandColor(options.branding?.color)));
     const root = host.attachShadow({ mode: 'open' });
     const style = container.ownerDocument.createElement('style');
     style.textContent = styles;
@@ -50,16 +52,21 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
         handles.delete(handle);
       },
     };
-    handles.add(handle);
+    if (destroyed) handle.destroy();
+    else handles.add(handle);
     return handle;
   };
   const sdk: BookingSDK = {
     open(trigger) {
       assertActive();
       modal?.destroy();
-      modal = createModal(options, trigger);
+      const generation = ++modalGeneration;
+      const next = createModal(options, trigger);
+      if (destroyed || generation !== modalGeneration) next.destroy();
+      else modal = next;
     },
     close() {
+      modalGeneration++;
       modal?.destroy();
       modal = undefined;
     },

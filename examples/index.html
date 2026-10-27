@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Space2Book SDK — disabled-embed example</title>
+    <style>
+      body { max-width: 58rem; margin: 2rem auto; padding: 0 1rem; font: 1rem/1.6 system-ui, sans-serif; color: #17243b; }
+      section { margin-block: 2rem; }
+      .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+      button, select { font: inherit; }
+      code { overflow-wrap: anywhere; }
+      #status { min-height: 1.6em; }
+    </style>
+  </head>
+  <body>
+    <h1>Space2Book SDK example</h1>
+    <p>
+      This example has <strong>no integration adapter</strong>. Embedding is
+      disabled: modal buttons still open a localized error and public booking
+      link, and inline mounting shows the same fallback. No iframe is created.
+    </p>
+    <p>
+      <code>https://booking.example.invalid/public</code> is deliberately
+      nonfunctional. Replace it in this file with your real, verified public
+      HTTPS booking URL. This page does not simulate authorization or successful
+      bookings.
+    </p>
+    <label for="locale">SDK UI language</label>
+    <select id="locale">
+      <option value="en">English</option>
+      <option value="nl">Nederlands</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+      <option value="es">Español</option>
+    </select>
+
+    <section aria-labelledby="modal-heading">
+      <h2 id="modal-heading">Modal buttons: embedding disabled</h2>
+      <p>Both generated buttons share one instance. They open the fallback modal.</p>
+      <div class="controls">
+        <div id="primary-button"></div>
+        <div id="secondary-button"></div>
+        <button id="programmatic-open" type="button">Open via API</button>
+      </div>
+      <p><code>sdk.close()</code> closes the modal; its own close control is also available.</p>
+    </section>
+
+    <section aria-labelledby="inline-heading">
+      <h2 id="inline-heading">Inline fallback</h2>
+      <div id="inline-booking"></div>
+    </section>
+
+    <section aria-labelledby="link-heading">
+      <h2 id="link-heading">Direct public link</h2>
+      <p>This does not require an embed adapter. The placeholder destination will not resolve.</p>
+      <div id="direct-link"></div>
+    </section>
+
+    <section aria-labelledby="cleanup-heading">
+      <h2 id="cleanup-heading">Lifecycle</h2>
+      <div class="controls">
+        <button id="cleanup" type="button">Destroy SDK and generated UI</button>
+        <button id="reinitialize" type="button">Reinitialize example</button>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <script type="module">
+      import { createSpace2Book } from '../dist/index.js';
+
+      // Serve the repository root after `npm run build`.
+      // Replace only with a real public URL verified with the backend owner.
+      const bookingUrl = 'https://booking.example.invalid/public';
+      const locale = document.getElementById('locale');
+      const status = document.getElementById('status');
+      const openButton = document.getElementById('programmatic-open');
+      const cleanupButton = document.getElementById('cleanup');
+      let sdk;
+      let handles = [];
+
+      function cleanup() {
+        if (!sdk) return;
+        sdk.close();
+        handles.forEach((handle) => handle.destroy());
+        handles = [];
+        sdk.destroy();
+        sdk = undefined;
+        openButton.disabled = true;
+        cleanupButton.disabled = true;
+      }
+
+      function initialize() {
+        cleanup();
+        sdk = createSpace2Book({
+          bookingUrl,
+          locale: locale.value,
+          branding: { name: 'Example venue', color: '#2457A7' },
+          // No adapter: intentionally fail closed. No mock production contract.
+          onError(code) {
+            status.textContent = `SDK status: ${code}. No booking has been made.`;
+          },
+        });
+        handles = [
+          sdk.createButton(document.getElementById('primary-button')),
+          sdk.createButton(document.getElementById('secondary-button')),
+          sdk.mount(document.getElementById('inline-booking')),
+          sdk.createLink(document.getElementById('direct-link')),
+        ];
+        openButton.disabled = false;
+        cleanupButton.disabled = false;
+        status.textContent = 'Initialized without an adapter. Embedding is disabled.';
+      }
+
+      openButton.addEventListener('click', () => sdk?.open(openButton));
+      cleanupButton.addEventListener('click', () => {
+        cleanup();
+        status.textContent = 'SDK and generated UI destroyed.';
+      });
+      document.getElementById('reinitialize').addEventListener('click', initialize);
+      locale.addEventListener('change', initialize);
+      window.addEventListener('pagehide', cleanup);
+      initialize();
+    </script>
+
+    <!--
+      Browser-build alternative: replace the module script above, do not run both.
+      <script src="../dist/space2book.min.js"></script>
+      <script>
+        window.Space2Book.init({
+          bookingUrl: 'https://booking.example.invalid/public',
+          locale: 'en',
+          branding: { name: 'Example venue', color: '#2457A7' }
+        });
+        window.Space2Book.createButton(document.getElementById('primary-button'));
+        window.Space2Book.createButton(document.getElementById('secondary-button'));
+        window.Space2Book.mount(document.getElementById('inline-booking'));
+        window.Space2Book.createLink(document.getElementById('direct-link'));
+        // Programmatic: window.Space2Book.open(trigger); window.Space2Book.close();
+        // On component teardown: window.Space2Book.destroy();
+      </script>
+    -->
+  </body>
+</html>

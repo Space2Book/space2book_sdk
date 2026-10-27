@@ -32,6 +32,7 @@ export function createEmbed(
   let disposed = false;
   let failed = false;
   let ready = false;
+  let hasLoaded = false;
   let listener: ((event: MessageEvent<unknown>) => void) | undefined;
   const clearTimer = () => win.clearTimeout(timer);
   const fail = (code: ErrorCode) => {
@@ -97,11 +98,14 @@ export function createEmbed(
         if (disposed || failed) return;
         try {
           if (messaging) {
-            // Every document load needs a new readiness acknowledgement.
-            ready = false;
-            status.hidden = false;
-            clearTimer();
-            timer = win.setTimeout(() => fail('timeout'), options.timeoutMs ?? 15000);
+            // Preserve an acknowledgement sent before the initial load event.
+            if (hasLoaded || !ready) {
+              ready = false;
+              status.hidden = false;
+              clearTimer();
+              timer = win.setTimeout(() => fail('timeout'), options.timeoutMs ?? 15000);
+            }
+            hasLoaded = true;
             if (messaging.createInitMessage) {
               frame?.contentWindow?.postMessage(messaging.createInitMessage(context), url.origin);
             }

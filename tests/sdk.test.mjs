@@ -177,6 +177,18 @@ test('inline frame sandbox, explicit adapter, loading state and destruction', ()
   assert.equal(container.children.length, 0);
 });
 
+test('branding selects contrasting button text for light and dark colors', () => {
+  const { container } = setup();
+  for (const [color, contrast] of [['#ffffff', '#000'], ['#000000', '#fff'], ['#ffff00', '#000']]) {
+    const instance = createSpace2Book({ bookingUrl, branding: { color } });
+    instance.createButton(container);
+    assert.equal(container.lastChild.style.getPropertyValue('--s2b-contrast'), contrast);
+    instance.open();
+    assert.equal(modal().host.style.getPropertyValue('--s2b-contrast'), contrast);
+    instance.destroy();
+  }
+});
+
 test('invalid, off-origin, host-origin and unsupported adapters fail closed', () => {
   const { container } = setup();
   for (const url of ['http://booking.example.invalid', 'https://evil.example.invalid', 'https://host.example.invalid/']) {
@@ -239,6 +251,38 @@ test('timeout, frame error and adapter exceptions retain fallback without retrie
   assert.equal(root.querySelector('iframe'), null);
   assert.equal(root.querySelector('a').href, bookingUrl);
   assert.deepEqual(errors, ['timeout']);
+});
+
+test('readiness before initial load is preserved', async () => {
+  const fixture = adapterFixture();
+  delete fixture.adapter.messaging.createInitMessage;
+  const errors = [];
+  const { win, container } = setup({ adapter: fixture.adapter, timeoutMs: 10, onError: (code) => errors.push(code) });
+  sdk.mount(container);
+  const root = container.firstChild.shadowRoot;
+  const frame = root.querySelector('iframe');
+  message(win, frame, { version: 1, channelId: fixture.context.channelId, type: 'ready' });
+  frame.dispatchEvent(new win.Event('load'));
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  assert.equal(root.querySelector('[role="status"]').hidden, true);
+  assert.deepEqual(errors, []);
+});
+
+test('synchronous error callbacks can destroy or close UI during creation', () => {
+  const { container } = setup();
+  for (const mode of ['modal', 'inline']) {
+    const instance = createSpace2Book({ bookingUrl, onError: () => instance.destroy() });
+    if (mode === 'modal') instance.open();
+    else instance.mount(container);
+    assert.equal(modal(), undefined);
+    assert.equal(container.children.length, 0);
+    assert.equal(document.body.style.overflow, '');
+    assert.throws(() => instance.open(), /destroyed/);
+  }
+  const instance = createSpace2Book({ bookingUrl, onError: () => instance.close() });
+  instance.open();
+  assert.equal(modal(), undefined);
+  instance.destroy();
 });
 
 test('frame error, normalized backend error and decoder failure clean up', () => {

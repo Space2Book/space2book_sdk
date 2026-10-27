@@ -1,6 +1,6 @@
 import { createEmbed } from './embed';
 import { translate } from './i18n';
-import { brandColor } from './security';
+import { brandColor, brandTextColor } from './security';
 import { styles } from './styles';
 import type { EmbedHandle, SDKOptions } from './types';
 
@@ -23,6 +23,7 @@ export function createModal(options: SDKOptions, trigger?: HTMLElement): EmbedHa
   const style = doc.createElement('style');
   style.textContent = styles;
   host.style.setProperty('--s2b-color', brandColor(options.branding?.color));
+  host.style.setProperty('--s2b-contrast', brandTextColor(brandColor(options.branding?.color)));
   const backdrop = doc.createElement('div');
   backdrop.className = 'backdrop';
   const panel = doc.createElement('section');

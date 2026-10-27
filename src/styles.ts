@@ -2,7 +2,7 @@ export const styles = `
 :host{font:16px/1.5 system-ui,sans-serif;color:#172033;--s2b-color:#2457d6}
 *{box-sizing:border-box}
 button,a{font:inherit}
-button{cursor:pointer;background:var(--s2b-color);color:#fff;border:2px solid currentColor;border-radius:6px;padding:.65rem 1rem}
+button{cursor:pointer;background:var(--s2b-color);color:var(--s2b-contrast,#fff);border:2px solid currentColor;border-radius:6px;padding:.65rem 1rem}
 button:focus-visible,a:focus-visible{outline:3px solid #111;outline-offset:3px}
 a{color:#1745ad}
 .backdrop{position:fixed;inset:0;background:#0009;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px}
