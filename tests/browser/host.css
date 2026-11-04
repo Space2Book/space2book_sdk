@@ -1,0 +1,4 @@
+/* Deliberately broad host rules must not leak into the SDK Shadow DOM. */
+button { border: 8px solid magenta; }
+section { display: none !important; }
+iframe { width: 1px !important; }

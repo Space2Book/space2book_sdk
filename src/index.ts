@@ -1,25 +1,36 @@
+import { destroyDeclarative, initDeclarative, observeDeclarative } from './declarative';
 import { createEmbed } from './embed';
 import { translate } from './i18n';
 import { createModal } from './modal';
 import { brandColor, brandTextColor, publicUrl } from './security';
 import { styles } from './styles';
-import type { BookingSDK, EmbedHandle, SDKOptions } from './types';
+import type { BookingSDK, EmbedHandle, ModalHandle, SDKOptions } from './types';
 
 export type * from './types';
-export const VERSION = '0.1.0';
+export { destroyDeclarative, initDeclarative, observeDeclarative } from './declarative';
+export const VERSION = '1.0.0';
+const activeForms = new WeakMap<BookingSDK, () => boolean>();
 
 export function createSpace2Book(input: SDKOptions): BookingSDK {
   const options: SDKOptions = {
     ...input,
-    bookingUrl: publicUrl(input.bookingUrl).href,
+    ...(input.bookingUrl ? { bookingUrl: publicUrl(input.bookingUrl).href } : {}),
     ...(input.branding ? { branding: { ...input.branding } } : {}),
   };
+  if (input.bookingUrl !== undefined && !input.bookingUrl) throw new TypeError('bookingUrl must be a nonempty HTTPS URL.');
+  if (!options.bookingUrl && !options.integrationId) throw new TypeError('Supply bookingUrl or integrationId.');
+  if (options.integrationId !== undefined && !/^[A-Za-z0-9_-]{1,200}$/.test(options.integrationId)) {
+    throw new TypeError('Invalid integration identifier.');
+  }
+  if (options.locale && !['nl', 'en', 'de', 'fr', 'es'].includes(options.locale)) throw new TypeError('Unsupported locale.');
   if (options.timeoutMs !== undefined &&
       (!Number.isFinite(options.timeoutMs) || options.timeoutMs <= 0 || options.timeoutMs > 2147483647)) {
     throw new TypeError('timeoutMs must be between 0 and 2147483647.');
   }
   const handles = new Set<EmbedHandle>();
-  let modal: EmbedHandle | undefined;
+  const mounts = new WeakMap<HTMLElement, EmbedHandle>();
+  const inlineHandles = new Set<EmbedHandle>();
+  let modal: ModalHandle | undefined;
   let modalGeneration = 0;
   let destroyed = false;
   const assertActive = () => {
@@ -36,6 +47,7 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
     const root = host.attachShadow({ mode: 'open' });
     const style = container.ownerDocument.createElement('style');
     style.textContent = styles;
+    if (options.styleNonce) style.nonce = options.styleNonce;
     root.append(style);
     container.append(host);
     let child: EmbedHandle;
@@ -45,8 +57,11 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
       host.remove();
       throw error;
     }
+    let disposed = false;
     const handle = {
       destroy() {
+        if (disposed) return;
+        disposed = true;
         child.destroy();
         host.remove();
         handles.delete(handle);
@@ -59,7 +74,7 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
   const sdk: BookingSDK = {
     open(trigger) {
       assertActive();
-      modal?.destroy();
+      if (modal?.active) { modal.focus(); return; }
       const generation = ++modalGeneration;
       const next = createModal(options, trigger);
       if (destroyed || generation !== modalGeneration) next.destroy();
@@ -67,44 +82,65 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
     },
     close() {
       modalGeneration++;
-      modal?.destroy();
-      modal = undefined;
+      modal?.requestClose();
+      if (!modal?.active) modal = undefined;
     },
     mount(container) {
-      return attach(container, (root) => {
+      assertActive();
+      const existing = mounts.get(container);
+      if (existing) return existing;
+      const mounted = attach(container, (root) => {
         const wrapper = container.ownerDocument.createElement('div');
         root.append(wrapper);
         return createEmbed(wrapper, options, 'inline', () => {});
       });
+      const handle = {
+        destroy() {
+          mounted.destroy();
+          if (mounts.get(container) === handle) mounts.delete(container);
+          inlineHandles.delete(handle);
+        },
+      };
+      if (!destroyed) { mounts.set(container, handle); inlineHandles.add(handle); }
+      return handle;
     },
     createButton(container) {
       return attach(container, (root) => {
         const button = container.ownerDocument.createElement('button');
         button.type = 'button';
         button.lang = options.locale ?? 'en';
-        button.textContent = translate(options.locale).book;
+        button.textContent = options.buttonText ?? translate(options.locale).book;
         button.setAttribute('aria-haspopup', 'dialog');
-        button.addEventListener('click', () => sdk.open(button));
+        const click = () => sdk.open(button);
+        button.addEventListener('click', click);
         root.append(button);
-        return { destroy: () => button.remove() };
+        return { destroy() { button.removeEventListener('click', click); button.remove(); } };
       });
     },
     createLink(container) {
+      if (!options.bookingUrl) throw new TypeError('createLink requires a public bookingUrl.');
       return attach(container, (root) => {
         const link = container.ownerDocument.createElement('a');
-        link.href = options.bookingUrl;
+        link.href = options.bookingUrl!;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.className = 'booking-link';
         link.lang = options.locale ?? 'en';
-        link.textContent = translate(options.locale).book;
+        link.textContent = options.buttonText ?? translate(options.locale).book;
         root.append(link);
         return { destroy: () => link.remove() };
       });
     },
     destroy() {
-      sdk.close();
+      modalGeneration++;
+      modal?.destroy();
+      modal = undefined;
+      for (const handle of inlineHandles) handle.destroy();
       for (const handle of handles) handle.destroy();
       destroyed = true;
     },
   };
+  activeForms.set(sdk, () => !!modal?.active || inlineHandles.size > 0);
   return sdk;
 }
 
@@ -116,7 +152,11 @@ function instance(): BookingSDK {
 
 export const Space2Book = {
   version: VERSION,
+  destroyDeclarative,
+  initDeclarative,
+  observeDeclarative,
   init(options: SDKOptions): BookingSDK {
+    if (defaultInstance && activeForms.get(defaultInstance)?.()) throw new Error('Destroy the existing singleton before reinitializing it.');
     const next = createSpace2Book(options);
     defaultInstance?.destroy();
     defaultInstance = next;

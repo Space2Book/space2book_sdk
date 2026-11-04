@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.0.0 — SDK-1 preparation
+
+- Preserve factory/singleton and Shadow DOM architecture; add idempotent declarative
+  HTML, dynamic initialization and shared document lifecycle across bundle copies.
+- Protect external links with new-tab isolation; allow embed-only integration IDs.
+- Centralize all normal close routes, add five-language confirmation and conservative
+  interactive, dirty, submitting, uncertain and completed state handling.
+- Require verified readiness messaging, reject public-page embeds, bound resize
+  events, invalidate reload contexts and retain uncertain submits.
+- Add browser/ESM/declaration/CSS builds, immutable manual-release staging, lint,
+  unit regressions, HTTPS browser fixtures, HTML/PHP examples and deployment docs.
+- Production embedding remains disabled: EMBED-1 contract is absent.
+
+### Review corrections
+
+- Invoke TypeScript through the current Node executable and verify Linux/Windows builds.
+- Freeze retained frames and block dismissal/fallbacks when verified state tracking is lost.
+- Replace the mutable V1 alias from clean staging without leaving obsolete files.
+- Keep replacement mounts registered when an obsolete handle is destroyed again.
+- Synchronize submission notices with uncertainty and completion.
+
+### Safety-related changes for custom adapters
+
+- Adapter messaging is now required; iframe load no longer marks readiness.
+- Use a separate authorized endpoint and exact embedOrigin when needed.
+- Repeated open preserves the active form; concurrent modal replacement and
+  singleton reconfiguration with active forms are rejected. Normal close is guarded.
+- New normalized events are internal adapter events, not a production wire protocol.
+
+
 ## 0.1.0
 
 Initial SDK implementation; this entry does not imply npm publication.

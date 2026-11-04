@@ -19,47 +19,46 @@ release range or response-time commitment is implied.
 
 ## Trust boundaries
 
-- The SDK renders integration UI; it does not authorize users, make bookings,
-  process payments, or implement the booking backend.
-- Supply an explicit, verified public absolute HTTPS `bookingUrl` without
-  credentials. The example's `https://booking.example.invalid/public` is a
-  nonfunctional placeholder, not a service endpoint.
-- Without an adapter, embedding fails closed: modal and inline UI show a
-  localized error and direct public booking link, with **no iframe**. A modal
-  trigger may still open that fallback.
-- An adapter's `resolveEmbedUrl(context)` must return an authorized HTTPS URL
-  on the same origin as `bookingUrl`. URL validation alone does not establish
-  backend authorization. The backend owner must implement that authorization.
-- Optional messaging is a backend-specific integration. `IntegrationEvent`
-  (`version: 1`, context UUID `channelId`, and `ready`/`close`/`error`) is an
-  internal normalized shape, **not a finalized backend wire contract**.
-- The SDK checks source window and origin before invoking `parseMessage`, then
-  checks the returned normalized version and channel. The adapter must validate
-  the real payload schema and map the actual backend contract; unknown or
-  invalid messages should return `null`.
-- Iframe `load` is not proof of authorization. A `ready` event is only as
-  trustworthy as the actual adapter/backend. Neither proves a completed
-  booking or payment.
-- Keep credentials and backend secrets out of browser bundles and adapters.
-  A channel UUID correlates messages; it is not an authentication credential.
+- The SDK does not authorize users, make bookings, calculate prices, process
+  payments or unlock subscriptions. The backend enforces all rights and domains.
+- Public links require absolute HTTPS URLs without credentials and open with
+  `target="_blank" rel="noopener noreferrer"`. A direct link needs no integration.
+- Production embedding is disabled pending the verified EMBED-1 contract. An
+  integration identifier alone never creates a frame. No public `/bf/` fallback.
+- Custom adapters are trusted executable code, not an authorization switch.
+  Embeds must use their exact configured HTTPS origin and be cross-origin from
+  the host. Public booking pages and the public URL itself are rejected.
+- Origin and source are checked before decoding messages. The core validates
+  normalized version, channel, exact fields, event type and state transitions.
+  Ready requires a verified event after initial load; load alone is insufficient.
+- A new navigation invalidates the context; a new mount gets a fresh UUID.
+  A UUID is correlation data, not a security token or backend credential.
+- No raw iframe messages, customer details, booking records, secrets or private
+  tokens are sent to host callbacks. Only fixed error codes are exposed.
+- Losing state tracking after readiness makes the retained frame inert and
+  conservatively uncertain, blocking normal dismissal and public fallbacks even
+  when the last known state was interactive, dirty or completed. No automatic
+  retries, reopening or public-link navigation occurs. Normal closing always
+  uses confirmation/state guards; technical `destroy()` is an explicit teardown.
+- The SDK stores no credentials and does not read or write cookies or storage.
+  The future backend contract must separately prove cookie-independent operation.
 
 ## Browser containment
 
-Embeds use:
+Frames use `sandbox="allow-scripts allow-forms allow-same-origin allow-popups"`
+and `referrerpolicy="no-referrer"`. Top navigation and popup sandbox escape are
+not allowed. Existing sandbox permissions are retained for compatibility; EMBED-1
+must verify whether popups are necessary before any change. Do not relax sandbox
+or CSP to bypass a broken integration. Sandbox is defense in depth and does not
+replace backend authorization or `frame-ancestors` domain restrictions.
 
-```html
-sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
-referrerpolicy="no-referrer"
-```
+UI uses textContent, safe attributes, isolated Shadow DOM and validated hex colors.
+There is no eval, innerHTML injection, remote script injection or wildcard messaging.
+The optional host CSS only targets explicit SDK data attributes. Strict host CSP
+uses a response-specific style nonce; no `unsafe-inline` is required. The host must
+allow its SDK script and the verified iframe origin under its own CSP.
 
-Top navigation is not granted. `allow-popups-to-escape-sandbox` is not granted,
-so popups retain sandbox restrictions. Do not silently relax these protections
-to make a backend flow work; agree on a safe integration with its owner instead.
-Sandboxing is defense in depth, not a replacement for a trustworthy booking
-origin or correct backend authorization. In particular, serving untrusted embed
-content from the host application's own origin weakens isolation when scripts
-and same-origin access are both permitted.
-
-Direct public links are a fallback navigation path, not evidence that embedding
-is authorized. Review the real destination and your site's deployment policies
-before enabling any integration.
+Unit and synthetic HTTPS browser tests are separated from real backend integration
+proof. See [backend dependencies](docs/backend-contract.md) and
+[test limitations](docs/testing.md). Do not enable production embedding until the
+actual contract, authorization, expiration and booking flows have been verified.

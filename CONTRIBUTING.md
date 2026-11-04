@@ -1,72 +1,37 @@
 # Contributing
 
-Use Node.js 22 or later and npm. Clone the repository and install its development
-dependencies:
-
-```sh
-npm install
-```
-
-## Development checks
-
-Run the existing commands for code changes:
+Work only in this SDK repository; treat the backend as read-only reference.
+Use Node.js 22.13+ or 24 and `npm ci`. The runtime has zero dependencies.
 
 ```sh
 npm run typecheck
-npm run build
+npm run lint
 npm test
+npx playwright install --with-deps chromium firefox webkit
+npm run test:browser
+npm run release
+npm pack --dry-run --ignore-scripts
 ```
 
-`npm test` also builds. There is no separate lint command. Documentation-only
-changes do not require these commands unless they change executable behavior.
-Keep changes focused, include relevant regression coverage for behavior changes,
-and update public documentation when the API changes.
+`npm test` builds first. Use the full browser matrix where available and report
+unavailable browsers honestly. jsdom is not evidence of browser security or
+cookie behavior. Browser fixtures need OpenSSL and two local HTTPS ports.
+See [testing](docs/testing.md) and [manual publication](docs/distribution.md).
 
-To inspect the local example after building:
+Keep the existing factory/singleton, Shadow DOM and adapter architecture. Preserve
+SSR-safe imports, safe HTTPS URLs, exact origin/source/channel checks, translated
+UI in all five locales, conservative form states and central close coordination.
+Do not replace active forms or route normal dismissal through `destroy()`.
 
-```sh
-python3 -m http.server 8000
-# Visit http://localhost:8000/examples/
-```
+Read the real EMBED-1 contract before implementing a production adapter. Never
+invent endpoints, wire names or credentials; never embed a public `/bf/` page.
+Keep fixtures explicitly marked. Backend authorization and booking logic stay in
+the backend. No secrets, raw iframe data or personal details belong in hostevents.
 
-Serve from the repository root so the example can import `../dist/index.js`.
-Replace `https://booking.example.invalid/public` only with a real, verified
-public booking URL. The example deliberately supplies no adapter: modal and
-inline views show the localized disabled-integration fallback, not a working
-booking iframe. Do not present a mock adapter or fabricated success as a
-production integration.
+Use `destroy()` on programmatic handles when removing framework components.
+Declarative observers clean up removed elements. Choose the public API for future
+wrappers; no separate framework booking implementation is needed.
 
-## Integration changes
-
-- Keep runtime dependencies at zero unless a change is explicitly justified.
-- Preserve SSR-safe imports; perform DOM work only in a browser.
-- Keep authorization and booking logic in the owning backend.
-- Do not invent production endpoints, credentials, or wire contracts. Adapter
-  changes need validation against the backend owner's actual contract.
-- Preserve fail-closed behavior, HTTPS/no-credentials URL validation, same-origin
-  embed restrictions, source/origin validation before decoding, and normalized
-  channel/version checks.
-- Do not weaken the iframe sandbox or referrer policy without a documented
-  security review. Iframe load is not authorization.
-- Keep all five supported locales (`nl`, `en`, `de`, `fr`, `es`) consistent.
-- Never commit secrets, customer data, or sensitive booking payloads.
-
-## Release preparation
-
-The proposed package name is `@space2book/sdk`; do not assume it is published.
-Before publishing, verify package ownership/name availability, version and
-changelog, public documentation, and actual backend integration assumptions.
-Run the checks above, then inspect the package:
-
-```sh
-npm pack --dry-run
-```
-
-The `prepack` hook runs type checking and tests. Verify the ESM artifact
-`dist/index.js`, declarations, and standalone `dist/space2book.min.js` are in
-the package. CDN metadata is preparation only: publication and deployment
-require an explicit maintainer release process. Pin versions in distribution
-examples once a release has been verified.
-
-For vulnerabilities, follow [SECURITY.md](SECURITY.md), not a public issue
-containing exploit details.
+Release files are prepared locally, not published automatically. Versioned paths
+must remain immutable. GitHub is not the CDN origin; do not configure Bunny or the
+image CDN here. See [SECURITY.md](SECURITY.md) for reporting security concerns.
