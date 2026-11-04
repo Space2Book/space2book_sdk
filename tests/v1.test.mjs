@@ -300,3 +300,81 @@ test('synchronous declarative error handlers can stop observation without leavin
   assert.notEqual(next, observer);
   assert.equal(element.children.length, 1);
 });
+
+test('destroying an obsolete mount handle cannot deregister a replacement', () => {
+  const { sdk, container } = setup();
+  const old = sdk.mount(container);
+  old.destroy();
+  const replacement = sdk.mount(container);
+  const frame = container.firstChild.shadowRoot.querySelector('iframe');
+  old.destroy();
+  assert.equal(sdk.mount(container), replacement);
+  assert.equal(container.children.length, 1);
+  assert.equal(container.firstChild.shadowRoot.querySelector('iframe'), frame);
+});
+
+for (const state of ['interactive', 'dirty']) {
+  for (const failure of ['reload', 'frame-error', 'backend-error', 'decoder-error']) {
+    test(`${failure} after ${state} blocks dismissal and interaction when tracking is lost`, () => {
+      const { sdk, root, ready, send, win, fixture } = setup();
+      sdk.open(); ready();
+      if (state === 'dirty') send('state', { state });
+      const frame = root().querySelector('iframe');
+      if (failure === 'reload') frame.dispatchEvent(new win.Event('load'));
+      if (failure === 'frame-error') frame.dispatchEvent(new win.Event('error'));
+      if (failure === 'backend-error') send('error');
+      if (failure === 'decoder-error') {
+        fixture.adapter.messaging.parseMessage = () => { throw new Error('synthetic decoder failure'); };
+        send('state', { state: 'submitting' });
+      }
+      assert.equal(frame.inert, true);
+      assert.equal(root().querySelector('footer').hidden, true);
+      // Even messages from the old source/channel cannot restore trust after failure.
+      send('ready'); send('state', { state: 'submitting' }); send('state', { state: 'completed' });
+      sdk.close(); root().querySelector('button').click(); root().querySelector('.backdrop').click();
+      document.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape' })); send('close');
+      assert.equal(root().querySelector('iframe'), frame);
+      assert.equal(root().querySelector('.confirmation'), null);
+      assert.match(root().querySelector('[role="alert"]').textContent, /unknown/);
+      assert.equal(document.body.style.overflow, 'hidden');
+    });
+  }
+}
+
+test('tracking lost while confirmation is open cannot be bypassed by discard or cancellation', () => {
+  const { sdk, root, ready, send, win } = setup();
+  sdk.open(); ready(); sdk.close();
+  const frame = root().querySelector('iframe');
+  frame.dispatchEvent(new win.Event('error'));
+  root().querySelector('.confirmation button:last-child').click();
+  assert.equal(root().querySelector('iframe'), frame);
+  assert.equal(frame.inert, true);
+  assert.equal(root().querySelector('.confirmation'), null);
+  sdk.close(); send('state', { state: 'completed' }); sdk.close();
+  assert.ok(root());
+});
+
+test('navigation after completion invalidates the old terminal state', () => {
+  const { sdk, root, ready, send, win } = setup();
+  sdk.open(); ready(); send('state', { state: 'submitting' }); send('state', { state: 'completed' });
+  const frame = root().querySelector('iframe');
+  frame.dispatchEvent(new win.Event('load'));
+  sdk.close();
+  assert.equal(root().querySelector('iframe'), frame);
+  assert.equal(frame.inert, true);
+  assert.equal(root().querySelector('footer').hidden, true);
+});
+
+test('close notice follows submitting, uncertain and completed without another close attempt', () => {
+  const { sdk, root, ready, send } = setup();
+  sdk.open(); ready(); send('state', { state: 'submitting' }); sdk.close();
+  const notice = root().querySelector('.panel > [role="alert"]');
+  assert.match(notice.textContent, /being submitted/);
+  send('state', { state: 'uncertain' });
+  assert.match(notice.textContent, /unknown/);
+  assert.doesNotMatch(root().textContent, /being submitted/);
+  send('state', { state: 'completed' });
+  assert.equal(notice.hidden, true);
+  assert.equal(notice.textContent, '');
+  assert.notEqual(root().querySelector('iframe').inert, true); // No lost tracking in this flow.
+});

@@ -2,7 +2,7 @@ import { createEmbed } from './embed';
 import { translate } from './i18n';
 import { brandColor, brandTextColor } from './security';
 import { styles } from './styles';
-import type { FormHandle, ModalHandle, SDKOptions } from './types';
+import type { FormHandle, FormState, ModalHandle, SDKOptions } from './types';
 
 const modalKey = Symbol.for('space2book.modal.v1');
 interface ModalState { active?: ModalHandle }
@@ -145,6 +145,15 @@ export function createModal(options: SDKOptions, trigger?: HTMLElement): ModalHa
     } else if (confirmationFocus instanceof win.HTMLElement && confirmationFocus.isConnected) confirmationFocus.focus();
     else closeButton.focus();
   };
+  const syncNotice = (state: FormState) => {
+    if (disposed) return;
+    if (state !== 'submitting' && state !== 'uncertain') {
+      notice.hidden = true;
+      notice.textContent = '';
+    } else if (!notice.hidden) {
+      notice.textContent = state === 'submitting' ? text.submitting : text.uncertain;
+    }
+  };
   const onKey = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -183,7 +192,7 @@ export function createModal(options: SDKOptions, trigger?: HTMLElement): ModalHa
   modalState.active = handle;
   closeButton.focus();
   try {
-    embed = createEmbed(panel, options, 'modal', () => handle.requestClose());
+    embed = createEmbed(panel, options, 'modal', () => handle.requestClose(), syncNotice);
   } catch (error) {
     handle.destroy();
     throw error;

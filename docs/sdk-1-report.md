@@ -115,9 +115,9 @@ backendcalls, automatische retry of bookingimplementatie in de SDK.
 
 ## 8. Testresultaten
 
-- 38 unit-/DOM-/releasetests: geslaagd op Node 24.22.1 en Node 22.23.4.
+- 51 unit-/DOM-/releasetests: geslaagd op Node 24.22.1 en Node 22.23.4.
 - `npm run typecheck`, `npm run lint`, `npm test`: geslaagd op beide Node-versies.
-- Acht lokale Playwright-tests: geslaagd op Chromium 155.0.8059.79.
+- Tien lokale Playwright-tests: geslaagd op Chromium 155.0.8059.79.
 - Volledige GitHub Actions-matrix: 22 geslaagd op Chromium 156.0.8078.4, Firefox
   157.0 en WebKit 27.2; twee expliciete skips voor de Chromium-specifieke cookieproef.
 - Echte lokale HTTPS-sites: `localhost:9443` tegenover `127.0.0.1:9444`.
@@ -143,14 +143,14 @@ Geen IE-ondersteuning of polyfills toegevoegd.
 
 [CI-run 41836904139](https://github.com/Space2Book/space2book_sdk/actions/runs/41836904139)
 is volledig groen op broncommit `075b5134259b08b26ee7c2f84ef841acaee65b9a`: beide
-Node-jobs en de volledige browsermatrix. De laatste verslagwijziging wijzigt
-alleen Markdown, geen broncode, build of tests.
+Node-jobs en de volledige browsermatrix. Dit is het bewijs van de oorspronkelijke implementatie; de reviewcorrecties
+en hun aanvullende validatie staan hieronder en op PR #3.
 
 ## 10. Buildresultaten
 
 Browserbundle, geminificeerde productievariant, ESM, declarations en optionele
 host-CSS bouwen succesvol. Runtime-dependencies: nul. Geminificeerde browser-JS:
-18.177 bytes (circa 7,0 kB gzip); geminificeerde CSS: 313 bytes. ESM heeft een
+18.348 bytes (circa 7,1 kB gzip); geminificeerde CSS: 313 bytes. ESM heeft een
 publieke source map; minified browser-JS heeft geen source map.
 
 ## 11. Distributiebestanden
@@ -189,3 +189,20 @@ Zodra het contract beschikbaar is, moet één geverifieerde productieadapter
 worden aangesloten op de gedeelde modal/inline-flow en declaratieve configuratie.
 De onafhankelijke SDK-onderdelen zijn afgerond; volledige productieacceptatie
 wordt pas daarna geclaimd. De backendrepository is niet gewijzigd.
+
+
+## Verwerking Copilot-review
+
+Alle vijf punten zijn aangepast: TypeScript draait via het huidige Node-executable
+voor Windows; verlies van statuscontrole na readiness zet de behouden iframecontext
+inert en uncertain; de V1-alias wordt volledig vervangen vanuit een schone stagingmap;
+een oud mount-handle mag alleen de eigen registratie opruimen; verzendmeldingen
+volgen uncertain/completed automatisch. Normaal sluiten en de publieke link blijven
+geblokkeerd na verlies van statuscontrole, ook bij een voorheen interactive/dirty
+formulier of een al openstaande sluitbevestiging.
+
+De suite omvat nu 51 geslaagde unit-/DOM-/releasetests op lokale Node 22 en 24 en
+tien geslaagde lokale Chromium-tests. De CI is uitgebreid met Windows-runners
+voor beide Node-versies. De actuele CI-resultaten staan in de PR; de eerder genoemde
+run bewijst de oorspronkelijke browsermatrix en is niet het bewijs voor deze fixes.
+Productie-embedding blijft uitgeschakeld in afwachting van EMBED-1.

@@ -53,8 +53,11 @@ loading --> error
 
 Herhaalde readiness reset geen voortgang. Dirty kan niet zomaar pristine worden;
 completed is terminaal. Onbekende of onmogelijke overgangen worden genegeerd.
-Een error vóór readiness verwijdert het iframe. Een fout na interactie behoudt
-context en sluitbevestiging; een submitfout wordt uncertain. Nieuwe navigatie
+Een error vóór readiness verwijdert het iframe. Een fout na readiness behoudt
+de context, maakt het iframe inert en zet de status op uncertain; normaal sluiten
+en de publieke link worden geblokkeerd omdat verdere submits niet meer gevolgd
+kunnen worden. Dit geldt ook als de laatste bekende status interactive, dirty
+of completed was. Nieuwe navigatie
 na de eerste load faalt gesloten en mag dezelfde handshake niet hergebruiken.
 Een volledig nieuwe mount krijgt een nieuwe channel-ID; oude source/channelberichten
 kunnen geen nieuwe instantie beïnvloeden.

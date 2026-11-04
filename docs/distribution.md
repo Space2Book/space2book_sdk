@@ -52,6 +52,11 @@ Declarations bevatten ook de door `index.d.ts` geïmporteerde moduledeclaraties;
 publiceer daarom alle `.d.ts`-bestanden samen.
 
 Kopieer pas na controle van de vaste versie dezelfde release-inhoud naar `/sdk/v1/`.
+De lokale `v1`-alias wordt opgebouwd als een schone staged kopie en vervangt de
+vorige alias volledig; verwijderde bestanden blijven niet achter. Een mislukte
+vervanging probeert de vorige alias te herstellen en bewaart de backup als dat
+niet lukt. Vaste versiemappen blijven onaangeraakt.
+
 `1.0.0` blijft onveranderlijk; `v1` is bewust veranderlijk en kan na verificatie
 ook teruggezet worden op een eerdere vaste V1-release. Geen bestanden van
 historische versies verwijderen of overschrijven. Controleer op de origin

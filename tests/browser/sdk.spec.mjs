@@ -19,10 +19,14 @@ test('real HTTPS cross-site handshake, state preservation, submit guard and comp
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
   await frame.locator('#uncertain').click();
   await expect(page.locator('.content [role="status"]')).toContainText('unknown');
+  await expect(page.locator('.panel > [role="alert"]')).toContainText('unknown');
+  await expect(page.locator('.panel > [role="alert"]')).not.toContainText('being submitted');
   await page.evaluate(() => window.sdk.close());
   await expect(page.getByRole('alert').filter({ hasText: 'unknown' }).first()).toBeVisible();
   await frame.locator('#complete').click();
   await expect(page.locator('.content footer')).toBeVisible();
+  await expect(page.locator('.panel > [role="alert"]')).toBeHidden();
+  await expect(page.locator('.panel > [role="alert"]')).toHaveText('');
   await page.evaluate(() => window.sdk.close());
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('#trigger')).toBeFocused();
@@ -121,3 +125,33 @@ test('declarative script autostart and duplicate loads preserve components with 
   await expect(page.locator('iframe')).toBeVisible();
   expect(await page.evaluate(() => window.violations)).toEqual([]);
 });
+
+
+for (const failure of ['reload', 'backend-error']) {
+  test(`dirty frame remains protected after ${failure} loses verified state tracking`, async ({ page }) => {
+    await page.goto('/'); await page.locator('#trigger').click();
+    const iframe = page.locator('iframe');
+    await expect(iframe).toBeVisible();
+    const previous = await iframe.elementHandle();
+    const frame = page.frames().find(f => f.url().startsWith('https://127.0.0.1:9444'));
+    await page.frameLocator('iframe').locator('#input').fill('synthetic progress');
+    if (failure === 'reload') await frame.evaluate(() => location.reload());
+    else await frame.evaluate(() => parent.postMessage({
+      version: 1, channelId: new URLSearchParams(location.search).get('channel'), type: 'error',
+    }, 'https://localhost:9443'));
+    await expect(page.locator('.content [role="alert"]')).toContainText('unknown');
+    await expect(iframe).toHaveAttribute('inert', '');
+    await expect(page.locator('.content footer')).toBeHidden();
+    // Messages from the untracked document can no longer clear the guarded state.
+    await frame.evaluate(() => parent.postMessage({
+      version: 1, channelId: new URLSearchParams(location.search).get('channel'), type: 'state', state: 'completed',
+    }, 'https://localhost:9443'));
+    await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => window.sdk.close());
+    await expect(page.getByRole('alertdialog')).toHaveCount(0);
+    await expect(iframe).toHaveCount(1);
+    expect(await iframe.evaluate((current, old) => current === old, previous)).toBe(true);
+    expect(await page.locator('#other').evaluate(e => e.inert)).toBe(true);
+  });
+}

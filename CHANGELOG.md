@@ -13,6 +13,14 @@
   unit regressions, HTTPS browser fixtures, HTML/PHP examples and deployment docs.
 - Production embedding remains disabled: EMBED-1 contract is absent.
 
+### Review corrections
+
+- Invoke TypeScript through the current Node executable and verify Linux/Windows builds.
+- Freeze retained frames and block dismissal/fallbacks when verified state tracking is lost.
+- Replace the mutable V1 alias from clean staging without leaving obsolete files.
+- Keep replacement mounts registered when an obsolete handle is destroyed again.
+- Synchronize submission notices with uncertainty and completion.
+
 ### Safety-related changes for custom adapters
 
 - Adapter messaging is now required; iframe load no longer marks readiness.

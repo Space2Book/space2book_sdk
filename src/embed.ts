@@ -4,6 +4,7 @@ import type { FormHandle, FormState, EmbedMode, ErrorCode, IntegrationContext, S
 
 export function createEmbed(
   container: HTMLElement, options: SDKOptions, mode: EmbedMode, close: () => void,
+  onStateChange: (state: FormState) => void = () => {},
 ): FormHandle {
   const doc = container.ownerDocument;
   const win = doc.defaultView!;
@@ -39,9 +40,12 @@ export function createEmbed(
     if (disposed || failed) return;
     failed = true;
     clearTimer();
-    // Preserve interactive state and browsing context, especially during an unknown submit outcome.
-    if (state === 'submitting' || state === 'uncertain') state = 'uncertain';
-    else if (!ready) { state = 'error'; frame?.remove(); }
+    // Once tracking is lost, a visible frame may submit without notifying us.
+    // Preserve its context, prevent new interaction and block dismissal/fallbacks.
+    if (ready) {
+      state = 'uncertain';
+      if (frame) frame.inert = true;
+    } else { state = 'error'; frame?.remove(); }
     if (listener) win.removeEventListener('message', listener);
     status.hidden = false;
     status.setAttribute('role', 'alert');
@@ -49,6 +53,7 @@ export function createEmbed(
       code === 'integration-disabled' ? text.disabled : text.error;
     // A second booking link while a submit may have succeeded invites duplicate bookings.
     footer.hidden = state === 'uncertain' || !options.bookingUrl;
+    onStateChange(state);
     options.onError?.(code);
   };
   const markReady = () => {
@@ -58,6 +63,7 @@ export function createEmbed(
     clearTimer();
     status.hidden = true;
     if (frame) frame.hidden = false;
+    onStateChange(state);
   };
   const transition = (next: FormState) => {
     if (!ready || state === 'completed') return;
@@ -72,6 +78,7 @@ export function createEmbed(
       status.textContent = text.uncertain;
       status.hidden = false;
     } else if (next === 'completed') status.hidden = true;
+    onStateChange(state);
   };
 
   if (!options.adapter) fail('integration-disabled');

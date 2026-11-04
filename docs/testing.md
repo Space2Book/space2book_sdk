@@ -33,7 +33,7 @@ Die optie verandert alleen het testexecutable. Er worden geen downloads via
 alternatieve mirrors of omzeilingen van netwerkbeleid gebruikt. De certificaat-
 fixture vereist `openssl`. Tests luisteren uitsluitend lokaal op poorten 9443/9444;
 maak die vrij voordat de suite start. De CI voert unitchecks uit op Node 22 en 24
-en biedt een aparte browserjob op Node 24.
+op Linux en Windows en biedt een aparte browserjob op Node 24.
 
 ## Afgedekte gedragingen
 
@@ -85,8 +85,8 @@ een submit die begint terwijl de sluitbevestiging al openstaat.
 Bewijs: [CI-run 41836904139](https://github.com/Space2Book/space2book_sdk/actions/runs/41836904139),
 gevalideerde broncommit `075b5134259b08b26ee7c2f84ef841acaee65b9a`.
 
-De unit-/DOM-suite omvat 38 testgevallen (14 bestaande, 23 V1-regressies en één
-releasetest). Raadpleeg het eindrapport voor de laatste uitvoerresultaten.
+De unit-/DOM-suite omvat na de Copilot-review 51 testgevallen (14 bestaande,
+35 V1-regressies en twee releasetests). Raadpleeg het eindrapport voor de laatste uitvoerresultaten.
 
 ## Nog te verifiëren met EMBED-1
 
@@ -102,3 +102,15 @@ polyfills. Exact herstel van het laatst actieve cross-origin formulierveld kan d
 niet controleren of afdwingen; dit is een expliciete EMBED-1-validatie.
 Cross-origin iframe-toegankelijkheid, schermlezers en keyboardgedrag
 van het echte formulier moeten ook door de backend worden gevalideerd.
+
+
+## Copilot-review verwerkt
+
+De regressies controleren verlies van statuscontrole na readiness (reload,
+iframe-/backendfout en decoderfout), blokkeren van sluiten/fallback en behoud van
+een inert iframe, verouderde mount-handles, automatisch bijgewerkte verzendmeldingen
+en een schone aliasvervanging zonder oude bestanden. De lokale Node 22/24-checks
+en tien Chromium-tests slagen. De CI-matrix omvat nu ook Windows voor beide
+Node-versies om build, tests en pakketinspectie op echte Windows-runners te toetsen.
+De laatste CI-status staat op PR #3; de eerder gekoppelde run is de oorspronkelijke
+validatie vóór deze reviewcorrecties.

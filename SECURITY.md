@@ -35,7 +35,9 @@ release range or response-time commitment is implied.
   A UUID is correlation data, not a security token or backend credential.
 - No raw iframe messages, customer details, booking records, secrets or private
   tokens are sent to host callbacks. Only fixed error codes are exposed.
-- Errors and reloads retain interactive/uncertain submit context. No automatic
+- Losing state tracking after readiness makes the retained frame inert and
+  conservatively uncertain, blocking normal dismissal and public fallbacks even
+  when the last known state was interactive, dirty or completed. No automatic
   retries, reopening or public-link navigation occurs. Normal closing always
   uses confirmation/state guards; technical `destroy()` is an explicit teardown.
 - The SDK stores no credentials and does not read or write cookies or storage.

@@ -164,8 +164,11 @@ Escape in de bevestiging annuleert het sluiten.
 `submitting` en `uncertain` blokkeren sluiten en tonen uitleg. De publieke link
 wordt daarbij verborgen om een tweede aanvraag te voorkomen. Een submit die
 begint terwijl de bevestiging openstaat wordt vóór definitief sluiten opnieuw
-gecontroleerd. Bij fouten of herladen tijdens submit blijft de noodzakelijke
-context behouden. De SDK probeert nooit zelf opnieuw te boeken.
+gecontroleerd. Zodra na readiness de statuscontrole wegvalt door een fout of herladen, blijft
+de iframecontext behouden maar wordt het iframe inert. De toestand wordt
+conservatief `uncertain`: sluiten en de publieke link blijven geblokkeerd, ook
+als de laatste bekende toestand nog interactief of dirty was. Verzendmeldingen
+volgen statuswijzigingen en verdwijnen na een geverifieerde afronding. De SDK probeert nooit zelf opnieuw te boeken.
 
 Er kan per document één modal actief zijn; inline kan daarnaast bestaan. Een
 andere instantie mag de actieve modal niet stilzwijgend vervangen: `open()` focust

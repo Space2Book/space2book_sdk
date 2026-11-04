@@ -1,9 +1,11 @@
 import { build, transform } from 'esbuild';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 
 await mkdir('dist', { recursive: true });
-execFileSync('node_modules/.bin/tsc', ['--emitDeclarationOnly'], { stdio: 'inherit' });
+const require = createRequire(import.meta.url);
+execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '--emitDeclarationOnly'], { stdio: 'inherit' });
 await build({ entryPoints: ['src/index.ts'], bundle: true, format: 'esm', target: 'es2020',
   outfile: 'dist/index.js', sourcemap: true });
 for (const minify of [false, true]) {

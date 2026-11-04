@@ -94,7 +94,13 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
         root.append(wrapper);
         return createEmbed(wrapper, options, 'inline', () => {});
       });
-      const handle = { destroy() { mounted.destroy(); mounts.delete(container); inlineHandles.delete(handle); } };
+      const handle = {
+        destroy() {
+          mounted.destroy();
+          if (mounts.get(container) === handle) mounts.delete(container);
+          inlineHandles.delete(handle);
+        },
+      };
       if (!destroyed) { mounts.set(container, handle); inlineHandles.add(handle); }
       return handle;
     },
