@@ -73,10 +73,17 @@ Op 4 november 2026 zijn de Chromium-tests uitgevoerd op systeem-Chromium
 155.0.8059.79. De acht browsertests slagen, inclusief CSP zonder `unsafe-inline`,
 echte cross-site messaging en expliciet geblokkeerde third-party cookies.
 
-Firefox en WebKit zijn hier niet uitgevoerd: de browserdownload vanaf
-`cdn.playwright.dev` wordt door het netwerkbeleid geweigerd met HTTP 403
-`Domain forbidden`. De complete Playwright-configuratie en CI-browserjob zijn
-geleverd; een geslaagde browsermatrix buiten deze omgeving wordt niet geclaimd.
+Firefox en WebKit konden niet lokaal worden geïnstalleerd: de browserdownload
+vanaf `cdn.playwright.dev` wordt door het omgevingsnetwerkbeleid geweigerd met
+HTTP 403 `Domain forbidden`. De volledige matrix is vervolgens daadwerkelijk
+in GitHub Actions uitgevoerd: Chromium 156.0.8078.4, Firefox 157.0 en WebKit 27.2.
+**22 tests slagen; twee Chromium-specifieke cookieproeven zijn bewust overgeslagen
+in Firefox en WebKit.** De gecorrigeerde test wacht op de zichtbare SDK-status,
+omdat `postMessage` asynchroon wordt afgeleverd. De bestaande unitproef dekt
+een submit die begint terwijl de sluitbevestiging al openstaat.
+
+Bewijs: [CI-run 41836904139](https://github.com/Space2Book/space2book_sdk/actions/runs/41836904139),
+gevalideerde broncommit `075b5134259b08b26ee7c2f84ef841acaee65b9a`.
 
 De unit-/DOM-suite omvat 38 testgevallen (14 bestaande, 23 V1-regressies en één
 releasetest). Raadpleeg het eindrapport voor de laatste uitvoerresultaten.

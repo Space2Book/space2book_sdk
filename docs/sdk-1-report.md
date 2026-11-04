@@ -117,7 +117,9 @@ backendcalls, automatische retry of bookingimplementatie in de SDK.
 
 - 38 unit-/DOM-/releasetests: geslaagd op Node 24.22.1 en Node 22.23.4.
 - `npm run typecheck`, `npm run lint`, `npm test`: geslaagd op beide Node-versies.
-- Acht Playwright-tests: geslaagd op Chromium 155.0.8059.79.
+- Acht lokale Playwright-tests: geslaagd op Chromium 155.0.8059.79.
+- Volledige GitHub Actions-matrix: 22 geslaagd op Chromium 156.0.8078.4, Firefox
+  157.0 en WebKit 27.2; twee expliciete skips voor de Chromium-specifieke cookieproef.
 - Echte lokale HTTPS-sites: `localhost:9443` tegenover `127.0.0.1:9444`.
 - CSP zonder `unsafe-inline`, origin/source-handshake, geblokkeerde third-party
   cookies, formulierbehoud, iframefocus, submit-/onzekerheidsbeveiliging,
@@ -134,11 +136,15 @@ maar niet met een PHP-interpreter uitgevoerd.
 ## 9. Browsercompatibiliteit
 
 Doel: moderne Chromium, Firefox, Safari/WebKit met Shadow DOM, inert,
-crypto.randomUUID en dynamische viewportunits. Chromium is daadwerkelijk getest.
-Firefox/WebKit konden niet worden geïnstalleerd: `cdn.playwright.dev` geeft door
-het omgevingsnetwerkbeleid HTTP 403 `Domain forbidden`. De Playwright-matrix en
-CI-job voor alle drie browsers zijn aanwezig; externe CI-resultaten worden niet
-vooruitgelopen. Geen IE-ondersteuning of polyfills toegevoegd.
+crypto.randomUUID en dynamische viewportunits. Alle drie engines zijn daadwerkelijk
+in GitHub Actions getest. De lokale downloadblokkade voor Firefox/WebKit (HTTP 403
+`Domain forbidden`) is als omgevingsbeperking behouden in de verslaglegging.
+Geen IE-ondersteuning of polyfills toegevoegd.
+
+[CI-run 41836904139](https://github.com/Space2Book/space2book_sdk/actions/runs/41836904139)
+is volledig groen op broncommit `075b5134259b08b26ee7c2f84ef841acaee65b9a`: beide
+Node-jobs en de volledige browsermatrix. De laatste verslagwijziging wijzigt
+alleen Markdown, geen broncode, build of tests.
 
 ## 10. Buildresultaten
 
