@@ -1,0 +1,15 @@
+/* Optional host controls only; SDK Shadow DOM styles remain isolated. */
+button[data-s2b-mode="modal"] {
+  font: 600 1rem/1.5 system-ui, sans-serif;
+  background: #2457d6;
+  color: #fff;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  padding: .65rem 1rem;
+  cursor: pointer;
+}
+button[data-s2b-mode="modal"]:focus-visible {
+  outline: 3px solid #111;
+  outline-offset: 3px;
+}
+[data-s2b-mode="inline"] { width: 100%; max-width: 100%; }

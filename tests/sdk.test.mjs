@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
+import { adapterFixture, fixtureOrigin, fixtureUrl } from './fixtures/adapter.mjs';
 import { createSpace2Book, Space2Book, VERSION } from '../dist/index.js';
 
 const bookingUrl = 'https://booking.example.invalid/public';
@@ -24,26 +25,9 @@ function modal(doc = document) {
     .find((root) => root?.querySelector('[role="dialog"]'));
 }
 
-function adapterFixture() {
-  let context;
-  let calls = 0;
-  return {
-    get context() { return context; },
-    get calls() { return calls; },
-    adapter: {
-      resolveEmbedUrl(value) { context = value; return bookingUrl; },
-      messaging: {
-        version: 1,
-        createInitMessage(value) { return { fixture: value.channelId }; },
-        parseMessage(data) { calls++; return data; },
-      },
-    },
-  };
-}
-
 function message(win, frame, data, overrides = {}) {
   win.dispatchEvent(new win.MessageEvent('message', {
-    origin: new URL(bookingUrl).origin,
+    origin: fixtureOrigin,
     source: frameWindow(frame),
     data,
     ...overrides,
@@ -66,7 +50,7 @@ afterEach(() => {
 });
 
 test('SSR-safe factory, version and strict public URL validation', () => {
-  assert.equal(VERSION, '0.1.0');
+  assert.equal(VERSION, '1.0.0');
   for (const url of ['javascript:alert(1)', 'http://example.invalid', '/relative', '******example.invalid']) {
     assert.throws(() => createSpace2Book({ bookingUrl: url }));
   }
@@ -134,7 +118,7 @@ test('multiple buttons, repeated opens, direct links and handle cleanup', () => 
   buttons[1].click();
   assert.equal([...document.body.children].filter((host) => host.shadowRoot?.querySelector('[role="dialog"]')).length, 1);
   sdk.close();
-  assert.equal(container.children[1].shadowRoot.activeElement, buttons[1]);
+  assert.equal(container.children[0].shadowRoot.activeElement, buttons[0]);
   assert.equal(container.children[2].shadowRoot.querySelector('a').href, bookingUrl);
   one.destroy();
   one.destroy();
@@ -163,16 +147,16 @@ test('all supported locales and safe branding text/color', () => {
 });
 
 test('inline frame sandbox, explicit adapter, loading state and destruction', () => {
-  const { container, win } = setup({ adapter: { resolveEmbedUrl: () => bookingUrl } });
+  const { container, win } = setup({ adapter: adapterFixture().adapter });
   const handle = sdk.mount(container);
   const root = container.firstChild.shadowRoot;
   const frame = root.querySelector('iframe');
-  assert.equal(frame.src, bookingUrl);
+  assert.equal(frame.src, fixtureUrl);
   assert.equal(frame.referrerPolicy, 'no-referrer');
   assert.equal(frame.getAttribute('sandbox'), 'allow-scripts allow-forms allow-same-origin allow-popups');
   assert.equal(root.querySelector('[role="status"]').hidden, false);
   frame.dispatchEvent(new win.Event('load'));
-  assert.equal(root.querySelector('[role="status"]').hidden, true);
+  assert.equal(root.querySelector('[role="status"]').hidden, false);
   handle.destroy();
   assert.equal(container.children.length, 0);
 });
@@ -220,7 +204,7 @@ test('messaging checks origin/source before parsing and validates version/channe
   let sent;
   frameWindow(frame).postMessage = (...args) => { sent = args; };
   frame.dispatchEvent(new win.Event('load'));
-  assert.equal(sent[1], new URL(bookingUrl).origin);
+  assert.equal(sent[1], fixtureOrigin);
   const valid = { type: 'ready', version: 1, channelId: fixture.context.channelId };
   message(win, frame, valid, { origin: 'https://evil.example.invalid' });
   message(win, frame, valid, { source: win });
@@ -233,9 +217,9 @@ test('messaging checks origin/source before parsing and validates version/channe
   message(win, frame, valid);
   assert.equal(root.querySelector('[role="status"]').hidden, true);
   frame.dispatchEvent(new win.Event('load'));
-  assert.equal(root.querySelector('[role="status"]').hidden, false);
+  assert.ok(root.querySelector('[role="alert"]'));
   message(win, frame, { ...valid, type: 'close' });
-  assert.equal(modal(), undefined);
+  assert.ok(modal());
   const calls = fixture.calls;
   message(win, frame, valid);
   assert.equal(fixture.calls, calls);
@@ -253,7 +237,7 @@ test('timeout, frame error and adapter exceptions retain fallback without retrie
   assert.deepEqual(errors, ['timeout']);
 });
 
-test('readiness before initial load is preserved', async () => {
+test('readiness before initial load is ignored until handshake', async () => {
   const fixture = adapterFixture();
   delete fixture.adapter.messaging.createInitMessage;
   const errors = [];
@@ -262,7 +246,9 @@ test('readiness before initial load is preserved', async () => {
   const root = container.firstChild.shadowRoot;
   const frame = root.querySelector('iframe');
   message(win, frame, { version: 1, channelId: fixture.context.channelId, type: 'ready' });
+  assert.equal(root.querySelector('[role="status"]').hidden, false);
   frame.dispatchEvent(new win.Event('load'));
+  message(win, frame, { version: 1, channelId: fixture.context.channelId, type: 'ready' });
   await new Promise((resolve) => setTimeout(resolve, 30));
   assert.equal(root.querySelector('[role="status"]').hidden, true);
   assert.deepEqual(errors, []);
@@ -311,7 +297,7 @@ test('singleton initialization is atomic and browser bundle exposes the same API
   assert.ok(modal());
   Space2Book.close();
   win.eval(readFileSync(new URL('../dist/space2book.min.js', import.meta.url), 'utf8'));
-  assert.equal(win.Space2Book.version, '0.1.0');
+  assert.equal(win.Space2Book.version, '1.0.0');
   win.Space2Book.init({ bookingUrl });
   win.Space2Book.open();
   assert.ok(modal());

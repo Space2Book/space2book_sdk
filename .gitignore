@@ -147,3 +147,9 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# SDK development and versioned release staging
+work/
+release/
+playwright-report/
+test-results/

@@ -1,13 +1,11 @@
 {
   "name": "@space2book/sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Lightweight, accessible Space2Book booking integrations",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "unpkg": "./dist/space2book.min.js",
-  "jsdelivr": "./dist/space2book.min.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -19,16 +17,21 @@
     "README.md",
     "CHANGELOG.md",
     "SECURITY.md",
-    "LICENSE"
+    "LICENSE",
+    "docs",
+    "examples"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsc --emitDeclarationOnly && esbuild src/index.ts --bundle --format=esm --target=es2020 --outfile=dist/index.js && esbuild src/browser.ts --bundle --format=iife --target=es2020 --minify --outfile=dist/space2book.min.js",
+    "build": "node scripts/build.mjs",
     "test": "npm run build && node --test tests/*.test.mjs",
-    "prepack": "npm run typecheck && npm test"
+    "prepack": "npm run typecheck && npm test",
+    "release": "npm run typecheck && npm run lint && npm test && node scripts/release.mjs",
+    "test:browser": "playwright test",
+    "lint": "eslint src scripts tests playwright.config.mjs"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13.0"
   },
   "repository": {
     "type": "git",
@@ -36,8 +39,12 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
     "esbuild": "0.28.2",
+    "eslint": "10.14.0",
     "jsdom": "26.1.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1"
   }
 }
