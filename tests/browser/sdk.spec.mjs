@@ -12,13 +12,17 @@ test('real HTTPS cross-site handshake, state preservation, submit guard and comp
   await expect(frame.locator('#input')).toHaveValue('synthetic progress');
   await expect(page.locator('iframe')).toBeFocused();
   await frame.locator('#submit').click();
+  // postMessage is asynchronous: observe the accepted state before testing its close policy.
+  await expect(page.locator('.content footer')).toBeHidden();
   await page.evaluate(() => window.sdk.close());
   await expect(page.getByRole('alert')).toContainText('being submitted');
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
   await frame.locator('#uncertain').click();
+  await expect(page.locator('.content [role="status"]')).toContainText('unknown');
   await page.evaluate(() => window.sdk.close());
   await expect(page.getByRole('alert').filter({ hasText: 'unknown' }).first()).toBeVisible();
   await frame.locator('#complete').click();
+  await expect(page.locator('.content footer')).toBeVisible();
   await page.evaluate(() => window.sdk.close());
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('#trigger')).toBeFocused();
@@ -86,6 +90,7 @@ test('iframe reload invalidates the previous handshake without resetting an unce
   await page.goto('/'); await page.locator('#trigger').click();
   await expect(page.locator('iframe')).toBeVisible();
   await page.frameLocator('iframe').locator('#submit').click();
+  await expect(page.locator('.content footer')).toBeHidden();
   const frame = page.frames().find(f => f.url().startsWith('https://127.0.0.1:9444'));
   await frame.evaluate(() => location.reload());
   await expect(page.getByRole('alert').filter({ hasText: 'unknown' })).toBeVisible();
