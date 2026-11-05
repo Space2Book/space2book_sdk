@@ -155,3 +155,16 @@ for (const failure of ['reload', 'backend-error']) {
     expect(await page.locator('#other').evaluate(e => e.inert)).toBe(true);
   });
 }
+
+test('iframe language changes preserve the language of host recovery messages', async ({ page }) => {
+  await page.goto('/'); await page.locator('#trigger').click();
+  await expect(page.locator('iframe')).toBeVisible();
+  await page.evaluate(() => window.sdk.setLanguage('fr'));
+  const frame = page.frames().find(f => f.url().startsWith('https://127.0.0.1:9444'));
+  await frame.evaluate(() => parent.postMessage({
+    version: 1, channelId: new URLSearchParams(location.search).get('channel'), type: 'error',
+  }, 'https://localhost:9443'));
+  await expect(page.locator('.content')).toHaveAttribute('lang', 'en');
+  await expect(page.locator('.content [role="alert"]')).toContainText('The result of your request is unknown.');
+  await expect(page.getByRole('button', { name: 'Close', exact: true })).toHaveText('Close');
+});

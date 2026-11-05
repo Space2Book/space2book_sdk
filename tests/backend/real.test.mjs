@@ -7,6 +7,7 @@ import { resolve, extname } from 'node:path';
 import https from 'node:https';
 import http from 'node:http';
 import net from 'node:net';
+import { phpServerArguments } from './php-launch.mjs';
 import { chromium, expect } from '@playwright/test';
 
 const sdkRoot = resolve('.');
@@ -23,7 +24,7 @@ test('SDK with real EMBED-1: modal, inline, safe retry, sandbox, CSP, authorizat
     mkdirSync('work/backend-tls', { recursive: true });
     execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-subj', '/CN=api.space2book.com',
       '-keyout', 'work/backend-tls/key.pem', '-out', 'work/backend-tls/cert.pem'], { stdio: 'ignore' });
-    const php = process.env.S2B_TEST_PHP_EXTERNAL === '1' ? undefined : spawn(process.env.S2B_TEST_PHP || 'php', ['-S', '0.0.0.0:8097', resolve('tests/backend/router.php')], {
+    const php = process.env.S2B_TEST_PHP_EXTERNAL === '1' ? undefined : spawn(process.env.S2B_TEST_PHP || 'php', phpServerArguments(process.env), {
       cwd: sdkRoot, env: { ...process.env, S2B_BACKEND_APP: app, S2B_SDK_TEST_WRITEPATH: writepath }, stdio: ['ignore', 'pipe', 'pipe'],
     });
     let diagnostics = '';
@@ -130,9 +131,12 @@ test('SDK with real EMBED-1: modal, inline, safe retry, sandbox, CSP, authorizat
         await page.evaluate(() => window.sdk.close());
         assert.equal(await page.getByRole('alertdialog').count(), 0);
         assert.equal(await page.locator('.content footer').isVisible(), false);
+        await page.evaluate(() => window.sdk.setLanguage('fr'));
         await frame.locator('#public-booking').evaluate(() => { window.embedClockOffset = 850000; });
         await frame.locator('#pc-retry').click();
         await page.waitForFunction(() => window.errors.includes('temporarily_unavailable'));
+        await expect(page.locator('.content')).toHaveAttribute('lang', 'en');
+        await expect(page.locator('.content [role="alert"]')).toContainText('The result of your request is unknown.');
         assert.equal(await frame.locator('#pc-retry').isEnabled(), true);
         assert.equal(await iframe.getAttribute('inert'), null);
         await frame.locator('#pc-retry').click(); await frame.locator('#pc-success').waitFor({ state: 'visible' });

@@ -1,6 +1,6 @@
 import { destroyDeclarative, initDeclarative, observeDeclarative } from './declarative';
 import { createEmbed } from './embed';
-import { translate } from './i18n';
+import { assertLocale, translate } from './i18n';
 import { createModal } from './modal';
 import { brandColor, brandTextColor, isIntegrationId, publicUrl } from './security';
 import { styles } from './styles';
@@ -23,7 +23,7 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
   if (options.integrationId !== undefined && !(options.adapter ? /^[A-Za-z0-9_-]{1,200}$/.test(options.integrationId) : isIntegrationId(options.integrationId))) {
     throw new TypeError('Invalid integration identifier.');
   }
-  if (options.locale && !['nl', 'en', 'de', 'fr', 'es'].includes(options.locale)) throw new TypeError('Unsupported locale.');
+  if (options.locale !== undefined) assertLocale(options.locale);
   if (options.timeoutMs !== undefined &&
       (!Number.isFinite(options.timeoutMs) || options.timeoutMs <= 0 || options.timeoutMs > 2147483647)) {
     throw new TypeError('timeoutMs must be between 0 and 2147483647.');
@@ -88,7 +88,7 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
       if (!modal?.active) modal = undefined;
     },
     setLanguage(locale) {
-      if (!['nl', 'en', 'de', 'fr', 'es'].includes(locale)) throw new TypeError('Unsupported locale.');
+      assertLocale(locale);
       options.locale = locale;
       modal?.setLanguage?.(locale);
       for (const handle of inlineHandles) handle.setLanguage?.(locale);

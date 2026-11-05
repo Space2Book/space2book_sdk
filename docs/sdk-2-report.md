@@ -70,9 +70,9 @@ Bij strikte host-CSP: geef de eigen response-nonce door met
 | `npm ci` | Geslaagd met de definitieve lockfile; runtime blijft dependency-free |
 | `npm run typecheck` | Geslaagd |
 | `npm run lint` | Geslaagd |
-| `npm test` | Alle 4 unitbestanden geslaagd; **74 afzonderlijke cases** (23 EMBED-1, 14 SDK, 35 V1/lifecycle, 2 release) |
+| `npm test` | Alle 5 unitbestanden geslaagd; **81 afzonderlijke cases** (29 EMBED-1, 14 SDK, 35 V1/lifecycle, 2 release, 1 PHP-bindpolicy) |
 | Echte backendfixtures + Draft 2020-12-schema | Alle 9 originele fixtures met Ajv gevalideerd; kopieën byte-identiek aan backend |
-| `npm run test:browser`, systeem-Chromium | **10 Chromium-cases geslaagd**; Firefox/WebKit ontbreken in deze omgeving |
+| `npm run test:browser`, systeem-Chromium | **11 Chromium-cases geslaagd**; Firefox/WebKit ontbreken in deze omgeving |
 | Echte SDK + backend in Chromium | **9 inhoudelijke controles geslaagd**, plus overkoepelend scenario: Node rapporteert **10/10** |
 | Browser-/ESM-bundles, declarations en npm pack dry-run | Gebouwd en gecontroleerd; lokale 1.1.0-release voorbereid |
 | `git diff --check`, backendstatus | Schoon; backend ongewijzigd |
@@ -107,6 +107,33 @@ productie-PDF. Dit bewijst popuprechten, niet productie-providerbeschikbaarheid.
 Testinfrastructuurproblemen en onjuiste fixture-aannames tijdens ontwikkeling zijn
 hersteld; bovenstaande resultaten betreffen de geslaagde controles na herstel.
 
+## Copilot-review verwerkt
+
+Alle drie de opmerkingen uit de review van 5 november 2026 zijn overgenomen:
+
+- [4481116971](https://github.com/Space2Book/space2book_sdk/pull/4#discussion_r4481116971):
+  de native PHP-fixtureserver bindt standaard aan `127.0.0.1:8097`. Alleen een
+  expliciet `S2B_TEST_PHP_BIND=0.0.0.0` kiest wildcard-binding voor een geïsoleerde
+  container. Een echte PHP-smokecheck bevestigt dat de containerinterface standaard
+  niet bereikbaar is en bij expliciete wildcard-binding wel. Er waren geen
+  gepubliceerde poorten op de smokecheckcontainer.
+- [4481117049](https://github.com/Space2Book/space2book_sdk/pull/4#discussion_r4481117049):
+  de host-UI behoudt consequent haar aanmaaktaal, inclusief fouten, herstel- en
+  laadmeldingen en `lang`-metadata. De iframe-taal blijft onafhankelijk wisselen;
+  dit volgt de bestaande documentatie en voorkomt gemengde uitspraak bij screenreaders.
+- [4481117106](https://github.com/Space2Book/space2book_sdk/pull/4#discussion_r4481117106):
+  één gedeelde taalvalidator controleert opties, SDK-methode en publieke
+  mount-handle vóór mutatie. Ongeldige JavaScriptwaarden geven een `TypeError`,
+  wijzigen init/context niet en laten de gewone timeout en `onError` werken.
+
+Regressies controleren ongeldige waarden vóór hello, na init en na ready,
+Nederlandse hosttekst na een Franse iframe-taalwissel bij error/reload,
+Chromium-herstelmeldingen en dezelfde taalscheiding bij de echte renewal-fout
+met byte-identieke submitretry. Na de correcties slagen typecheck/lint,
+81 unittests, 11 Chromium-cases en de 9 echte backendcontroles (10/10 inclusief
+het overkoepelende scenario). Firefox/WebKit zijn in deze reviewronde niet opnieuw
+uitgevoerd; de eerder vastgestelde ontbrekende binaries blijven een acceptatiepunt.
+
 ## Resterende acceptatiepunten
 
 - Firefox, WebKit/Safari en mobiele WebViews moeten nog worden uitgevoerd in een
@@ -133,10 +160,12 @@ Zie [testing](testing.md) voor herhaalbare commando's en veiligheidsgrenzen.
   `src/index.ts`, `src/modal.ts`, `src/security.ts`, `src/i18n.ts`.
 - Versie/devtest-tooling: `package.json`, `package-lock.json` (1.1.0; Ajv alleen als devDependency).
 - Unit/protocol: `tests/embed-v1.test.mjs`, `tests/sdk.test.mjs`, `tests/v1.test.mjs`,
+  `tests/backend-launch.test.mjs`,
   `tests/fixtures/embed-v1/embed-messages-v1.schema.json`,
   `tests/fixtures/embed-v1/embed-messages-v1.fixtures.json`.
 - Browsertests: `tests/browser/host.mjs`, `tests/browser/sdk.spec.mjs`;
-  echte integratie: `tests/backend/host.mjs`, `tests/backend/router.php`, `tests/backend/real.test.mjs`.
+  echte integratie: `tests/backend/host.mjs`, `tests/backend/router.php`, `tests/backend/real.test.mjs`,
+  `tests/backend/php-launch.mjs`.
 - Documentatie: `README.md`, `SECURITY.md`, `CHANGELOG.md`, `docs/backend-contract.md`,
   `docs/testing.md`, `docs/distribution.md`, `docs/sdk-1-report.md` (historische verwijzing),
   `docs/sdk-2-report.md`.

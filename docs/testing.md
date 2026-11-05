@@ -71,13 +71,15 @@ npm run test:backend
 Een al gestarte lokale PHP-testserver kan gebruikt worden met `S2B_TEST_PHP_EXTERNAL=1`.
 Die server moet de SDK-router draaien met `S2B_BACKEND_APP`,
 `S2B_SDK_TEST_WRITEPATH` en de wegwerpdatabasevariabelen ingesteld.
-Het harnas start of stopt die externe server niet.
+Het harnas start of stopt die externe server niet. Bind ook die native server aan loopback.
 
 Een PHP-containerwrapper moet de vier databasevariabelen en `S2B_PUBLIC_TEST_MYSQL`,
 `S2B_BACKEND_APP`, `S2B_SDK_TEST_WRITEPATH` doorgeven. Mount de backend read-only,
 de SDK read/write, publiceer alleen `127.0.0.1:8097:8097` en verbind alleen met de
-wegwerp-MySQL-server. PHP draait zijn lokale router op 0.0.0.0:8097 binnen die
-container. Zorg dat de wrapper bij SIGTERM ook zijn container stopt.
+wegwerp-MySQL-server. Native PHP bindt standaard uitsluitend aan `127.0.0.1:8097`.
+Alleen voor een geïsoleerde container kan expliciet `S2B_TEST_PHP_BIND=0.0.0.0`
+worden ingesteld; dan draait PHP zijn router op `0.0.0.0:8097` binnen die container.
+Andere bindwaarden worden geweigerd. Zorg dat de wrapper bij SIGTERM ook zijn container stopt.
 
 Het harnas blokkeert externe assets/providers en cookie/web-storagegebruik.
 Succesvolle API-antwoorden worden **niet gemockt**. Alleen de eerste submit wordt

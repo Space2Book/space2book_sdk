@@ -258,3 +258,63 @@ test('language changed after init is delivered after real readiness without rest
   assert.equal(sent[0][0].instance, sent[1][0].instance);
   assert.equal(sent[0][0].channel, sent[1][0].channel);
 });
+
+for (const phase of ['before-hello', 'after-init', 'ready']) {
+  test(`mount handle rejects unsupported JavaScript locales without changing the ${phase} session`, async () => {
+    const { sdk, hello, ready, sent, frame, errors, root } = setup({ timeoutMs: phase === 'ready' ? 15000 : 10 }, 'inline');
+    const mount = sdk.mount(document.querySelector('main'));
+    if (phase !== 'before-hello') hello();
+    if (phase === 'ready') ready();
+    const count = sent.length;
+    const windowErrors = [];
+    dom.window.addEventListener('error', event => { windowErrors.push(event.message); event.preventDefault(); });
+    for (const value of ['xx', '', null, undefined, {}, 7]) {
+      assert.throws(() => mount.setLanguage(value), { name: 'TypeError', message: 'Unsupported locale.' });
+    }
+    assert.equal(sent.length, count);
+    if (phase === 'before-hello') hello();
+    assert.equal(sent[0][0].payload.language, 'nl');
+    if (phase === 'ready') {
+      mount.setLanguage('fr');
+      assert.equal(sent.at(-1)[0].type, 'language');
+      assert.equal(sent.at(-1)[0].payload.language, 'fr');
+      assert.equal(frame.hidden, false);
+    } else {
+      await new Promise(resolve => setTimeout(resolve, 30));
+      assert.deepEqual(errors, ['timeout']);
+      assert.equal(frame.isConnected, false);
+      assert.match(root.querySelector('[role="alert"]').textContent, /Het laden duurt te lang/);
+    }
+    assert.deepEqual(windowErrors, []);
+  });
+}
+
+for (const mode of ['modal', 'inline']) {
+  test(`${mode} host text keeps its creation language after iframe language changes, errors and reload`, () => {
+    const { sdk, hello, ready, load, send, root, sent } = setup({ bookingUrl: 'https://mybooking.space2book.com/bf/venue/test' }, mode);
+    hello(); ready(); load(); sdk.setLanguage('fr');
+    assert.equal(sent.at(-1)[0].payload.language, 'fr');
+    const content = root.querySelector('.content');
+    assert.equal(content.lang, 'nl');
+    assert.equal(root.querySelector('footer a').textContent, 'Boekingspagina openen');
+    send('error', { code: 'temporarily_unavailable' });
+    assert.match(content.querySelector('[role="alert"]').textContent, /^Het boekingsformulier is tijdelijk/);
+    load();
+    assert.equal(content.lang, 'nl');
+    assert.equal(content.querySelector('[role="status"]').textContent, 'Boekingspagina laden…');
+    send('hello', {}, { channel: nextChannel });
+    assert.equal(sent.at(-1)[0].payload.language, 'fr');
+  });
+}
+
+test('SDK option and method reject unsupported locales before any language mutation', () => {
+  const { sdk, hello, ready, sent } = setup();
+  hello(); ready();
+  for (const value of ['xx', '', null, {}, 7]) {
+    assert.throws(() => createSpace2Book({ integrationId, locale: value }), /Unsupported locale/);
+    assert.throws(() => sdk.setLanguage(value), /Unsupported locale/);
+  }
+  assert.equal(sent.length, 1);
+  sdk.setLanguage('de');
+  assert.equal(sent.at(-1)[0].payload.language, 'de');
+});

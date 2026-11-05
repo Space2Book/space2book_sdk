@@ -91,6 +91,11 @@ submitting blijft geblokkeerd tot een definitief bericht of expliciete technisch
 `completed` betekent **verwerkt**; een offerte, optie of betaling kan nog opvolging
 vereisen. Het betekent niet automatisch betaald of definitief bevestigd.
 
+Hostmeldingen, titels en hun `lang`-metadata behouden de taal van aanmaak.
+`setLanguage` verandert alleen de iframecontext en de taal voor volgende mounts.
+Zowel de SDK-methode als de publieke mount-handle valideren taal vóór mutatie;
+een ongeldige waarde geeft een `TypeError` en verandert init/timeout niet.
+
 ## Foutcodes en de waarneembaarheidsgrens
 
 De SDK onderscheidt `integration_not_found`, `integration_inactive`,

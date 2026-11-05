@@ -8,6 +8,13 @@ const translations = {
   es: { confirm: "¿Cerrar este formulario? Podrías perder los datos introducidos.", keep: "Seguir reservando", discard: "Cerrar y descartar", submitting: "Tu solicitud se está enviando. Espera el resultado.", uncertain: "El resultado de tu solicitud es desconocido. Mantén abierto el formulario y no lo envíes de nuevo.", disabled: "La integración no está disponible. Comprueba la conexión del formulario.", book: 'Reservar', close: 'Cerrar', loading: 'Cargando la página de reservas…', fallback: 'Abrir página de reservas', error: 'La página de reservas integrada no está disponible.', title: 'Reservar con' },
 } as const;
 
+/** Validate JavaScript callers before changing any live language context. */
+export function assertLocale(value: unknown): asserts value is Locale {
+  if (typeof value !== 'string' || !['nl', 'en', 'de', 'fr', 'es'].includes(value)) {
+    throw new TypeError('Unsupported locale.');
+  }
+}
+
 export function translate(locale: Locale = 'en') {
   return translations[locale] ?? translations.en;
 }

@@ -1,4 +1,4 @@
-import { errorText, translate } from './i18n';
+import { assertLocale, errorText, translate } from './i18n';
 import { space2bookAdapter } from './space2book-adapter';
 import { publicUrl } from './security';
 import type { FormHandle, FormState, EmbedMode, ErrorCode, IntegrationContext, Locale, SDKOptions } from './types';
@@ -9,8 +9,9 @@ export function createEmbed(
 ): FormHandle {
   const doc = container.ownerDocument;
   const win = doc.defaultView!;
-  let locale = options.locale ?? 'en';
-  let text = translate(locale);
+  const hostLocale = options.locale ?? 'en';
+  const text = translate(hostLocale);
+  let locale = hostLocale;
   const adapter = options.adapter ?? (options.integrationId ? space2bookAdapter : undefined);
   const childChannel = adapter?.messaging?.channelSource === 'iframe';
   const content = doc.createElement('section');
@@ -52,7 +53,7 @@ export function createEmbed(
     if (backend && ready && !disposed && !failed) {
       status.hidden = false;
       status.setAttribute('role', 'alert');
-      status.textContent = state === 'uncertain' ? text.uncertain : errorText(locale, code);
+      status.textContent = state === 'uncertain' ? text.uncertain : errorText(hostLocale, code);
       footer.hidden = state === 'submitting' || state === 'uncertain' || !options.bookingUrl;
       options.onError?.(code);
       return;
@@ -71,7 +72,7 @@ export function createEmbed(
     status.hidden = false;
     status.setAttribute('role', 'alert');
     status.textContent = state === 'uncertain' ? text.uncertain :
-      errorText(locale, code);
+      errorText(hostLocale, code);
     // A second booking link while a submit may have succeeded invites duplicate bookings.
     footer.hidden = state === 'uncertain' || !options.bookingUrl;
     onStateChange(state);
@@ -219,7 +220,6 @@ export function createEmbed(
       language = (value) => {
         if (context.channelId && !ready) pendingLanguage = true;
         locale = value;
-        text = translate(value);
         context = Object.freeze({ ...context, locale: value });
         if (ready && !failed && messaging.createLanguageMessage) post(messaging.createLanguageMessage(context, value));
       };
@@ -232,7 +232,7 @@ export function createEmbed(
   return {
     get state() { return state; },
     get canClose() { return closeAllowed; },
-    setLanguage(value) { if (!disposed) language?.(value); },
+    setLanguage(value) { assertLocale(value); if (!disposed) language?.(value); },
     destroy() {
       if (disposed) return;
       disposed = true;

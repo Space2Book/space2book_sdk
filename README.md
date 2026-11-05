@@ -116,7 +116,7 @@ voor embed-only gebruik; zonder deze optie verschijnt geen fallbacklink. Minsten
 | `mount(container)` | Inline; dezelfde container geeft hetzelfde handle |
 | `createButton(container)` | Gestylede modaltrigger en destroy-handle |
 | `createLink(container)` | Publieke link in nieuw tabblad; vereist `bookingUrl` |
-| `setLanguage(locale)` | Initialiseert volgende frames en stuurt taal naar actieve frames; backend negeert taalwissels als het formulier die blokkeert |
+| `setLanguage(locale)` | Initialiseert volgende frames en stuurt taal naar actieve frames; bestaande hosttekst en `lang` behouden hun aanmaaktaal. Ongeldige talen geven een `TypeError`; backend negeert taalwissels als het formulier die blokkeert |
 | `destroy()` | Technische teardown van UI, listeners en timers; geen normale gebruikerssluitroute |
 | `initDeclarative(root?)` | Idempotente scan met destroy-handle |
 | `observeDeclarative(document?)` | Gedeelde observer voor toevoegen/verwijderen |
