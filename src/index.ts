@@ -2,13 +2,14 @@ import { destroyDeclarative, initDeclarative, observeDeclarative } from './decla
 import { createEmbed } from './embed';
 import { translate } from './i18n';
 import { createModal } from './modal';
-import { brandColor, brandTextColor, publicUrl } from './security';
+import { brandColor, brandTextColor, isIntegrationId, publicUrl } from './security';
 import { styles } from './styles';
-import type { BookingSDK, EmbedHandle, ModalHandle, SDKOptions } from './types';
+import type { BookingSDK, EmbedHandle, Locale, ModalHandle, SDKOptions } from './types';
 
 export type * from './types';
 export { destroyDeclarative, initDeclarative, observeDeclarative } from './declarative';
-export const VERSION = '1.0.0';
+export { space2bookAdapter, SPACE2BOOK_EMBED_ORIGIN } from './space2book-adapter';
+export const VERSION = '1.1.0';
 const activeForms = new WeakMap<BookingSDK, () => boolean>();
 
 export function createSpace2Book(input: SDKOptions): BookingSDK {
@@ -19,7 +20,7 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
   };
   if (input.bookingUrl !== undefined && !input.bookingUrl) throw new TypeError('bookingUrl must be a nonempty HTTPS URL.');
   if (!options.bookingUrl && !options.integrationId) throw new TypeError('Supply bookingUrl or integrationId.');
-  if (options.integrationId !== undefined && !/^[A-Za-z0-9_-]{1,200}$/.test(options.integrationId)) {
+  if (options.integrationId !== undefined && !(options.adapter ? /^[A-Za-z0-9_-]{1,200}$/.test(options.integrationId) : isIntegrationId(options.integrationId))) {
     throw new TypeError('Invalid integration identifier.');
   }
   if (options.locale && !['nl', 'en', 'de', 'fr', 'es'].includes(options.locale)) throw new TypeError('Unsupported locale.');
@@ -59,6 +60,7 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
     }
     let disposed = false;
     const handle = {
+      setLanguage(locale: Locale) { child.setLanguage?.(locale); },
       destroy() {
         if (disposed) return;
         disposed = true;
@@ -85,6 +87,12 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
       modal?.requestClose();
       if (!modal?.active) modal = undefined;
     },
+    setLanguage(locale) {
+      if (!['nl', 'en', 'de', 'fr', 'es'].includes(locale)) throw new TypeError('Unsupported locale.');
+      options.locale = locale;
+      modal?.setLanguage?.(locale);
+      for (const handle of inlineHandles) handle.setLanguage?.(locale);
+    },
     mount(container) {
       assertActive();
       const existing = mounts.get(container);
@@ -95,6 +103,7 @@ export function createSpace2Book(input: SDKOptions): BookingSDK {
         return createEmbed(wrapper, options, 'inline', () => {});
       });
       const handle = {
+        setLanguage(locale: Locale) { mounted.setLanguage?.(locale); },
         destroy() {
           mounted.destroy();
           if (mounts.get(container) === handle) mounts.delete(container);
@@ -164,6 +173,7 @@ export const Space2Book = {
   },
   open: (trigger?: HTMLElement): void => instance().open(trigger),
   close: (): void => defaultInstance?.close(),
+  setLanguage: (locale: Locale): void => instance().setLanguage(locale),
   mount: (container: HTMLElement): EmbedHandle => instance().mount(container),
   createButton: (container: HTMLElement): EmbedHandle => instance().createButton(container),
   createLink: (container: HTMLElement): EmbedHandle => instance().createLink(container),

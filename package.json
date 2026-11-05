@@ -1,6 +1,6 @@
 {
   "name": "@space2book/sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Lightweight, accessible Space2Book booking integrations",
   "type": "module",
   "main": "./dist/index.js",
@@ -28,7 +28,8 @@
     "prepack": "npm run typecheck && npm test",
     "release": "npm run typecheck && npm run lint && npm test && node scripts/release.mjs",
     "test:browser": "playwright test",
-    "lint": "eslint src scripts tests playwright.config.mjs"
+    "lint": "eslint src scripts tests playwright.config.mjs",
+    "test:backend": "npm run build && node --test tests/backend/real.test.mjs"
   },
   "engines": {
     "node": ">=22.13.0"
@@ -41,6 +42,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.64.1",
+    "ajv": "8.17.1",
     "esbuild": "0.28.2",
     "eslint": "10.14.0",
     "jsdom": "26.1.0",

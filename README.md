@@ -1,82 +1,75 @@
-# Space2Book SDK V1
+# Space2Book JavaScript SDK
 
-Lichtgewicht TypeScript SDK zonder runtime-dependencies. Bestaande factory,
-singleton, Shadow DOM, modal en inline architectuur zijn behouden.
+Lichtgewicht TypeScript SDK zonder runtime-dependencies, met externe boekingslink,
+modal en inlineformulier. Een geldige `integrationId` selecteert automatisch de
+officiële Space2Book-productieadapter. Klanten hoeven geen adapter of JavaScript
+te schrijven. De koppeling gebruikt het geïmplementeerde EMBED-1 v1-contract;
+zie [exacte contractreferentie en beveiligingsgrens](docs/backend-contract.md).
 
-**Status 1.0.0: de externe boekingslink is beschikbaar. Productie-embedding blijft
-uitgeschakeld totdat EMBED-1 is geleverd en tegen de echte backend is getest.**
-Een integration-ID alleen schakelt niets vrij. Modal en inline tonen momenteel
-een vertaalde foutmelding, zonder iframe. Er is geen automatische `/bf/`-fallback.
-Zie [backendafhankelijkheden](docs/backend-contract.md).
+De bestanden zijn lokaal gebouwd en getest. Er is in deze opdracht niets naar
+productie of Bunny gepubliceerd. Onderstaande CDN-paden werken na publicatie.
 
-## Binnen enkele minuten: externe knop
+## Externe knop
 
-Kopieer in Space2Book de publieke boekingslink van de locatie. Gebruik de volledige
-link, inclusief public ID en slug. Een beschikbaar publiek formulier is voldoende;
-een betaalde webformulierkoppeling is hiervoor niet vereist. Plaats deze HTML in
-het CMS of de template van de website:
+Kopieer de publieke boekingslink van de locatie. Een webformulierkoppeling is niet
+nodig; deze HTML werkt ook zonder SDK of JavaScript:
 
 ```html
 <a href="https://mybooking.space2book.com/bf/PUBLIC_ID/venue"
    target="_blank" rel="noopener noreferrer">Boek direct</a>
 ```
 
-Vervang `PUBLIC_ID/venue` door de gekopieerde waarden. Deze variant werkt volledig
-zonder JavaScript. Styling kan met de eigen website-CSS.
+## Modal en inline
 
-## Modal en inline voorbereiden
+Maak een actieve webformulierkoppeling in Space2Book, registreer het domein van de
+website en kopieer de integration identifier: **64 kleine hextekens**. De website
+moet op het toegestane HTTPS-domein staan. De backend controleert abonnement,
+domein, scope en de beschikbaarheid van het publieke formulier.
 
-Maak in Space2Book een webformulierkoppeling aan, registreer het exacte domein van
-de website en kopieer het integration identifier. Backendautorisatie bepaalt
-venue, abonnement, domeinen en beschikbare boekingsmogelijkheden. Beide
-presentaties gebruiken **dezelfde koppeling en dezelfde adapter**; er is geen
-aparte modal- of inline-instelling.
-
-Onderstaande productie-URL's zijn de beoogde publicatiepaden. De bestanden moeten
-eerst handmatig gepubliceerd worden; deze repository claimt geen live CDN-release.
-Zolang EMBED-1 ontbreekt, tonen beide voorbeelden de veilige foutmelding.
+Vervang `INTEGRATION_ID` door die identifier. Beide vormen gebruiken exact dezelfde
+koppeling en backendinstellingen:
 
 ```html
-<link rel="stylesheet" href="https://cdn.space2book.com/sdk/1.0.0/space2book.min.css">
-<script defer src="https://cdn.space2book.com/sdk/1.0.0/space2book.min.js"></script>
+<script defer src="https://cdn.space2book.com/sdk/v1/space2book.min.js"></script>
 
-<button type="button" data-s2b-mode="modal"
-        data-s2b-integration="INTEGRATION_ID" data-s2b-locale="nl">Boek direct</button>
+<button type="button"
+        data-s2b-mode="modal"
+        data-s2b-integration="INTEGRATION_ID"
+        data-s2b-locale="nl">Boek direct</button>
 
 <div data-s2b-mode="inline"
-     data-s2b-integration="INTEGRATION_ID" data-s2b-locale="nl"></div>
+     data-s2b-integration="INTEGRATION_ID"
+     data-s2b-locale="nl"></div>
 ```
 
 Het script initialiseert bestaande en dynamisch toegevoegde elementen automatisch.
-Herhaald laden of scannen maakt geen tweede formulier. Verwijderde declaratieve
-elementen worden opgeruimd; terugplaatsen initialiseert ze opnieuw. Attribuutwijzigingen
-vervangen een actief formulier niet. Ruim eerst bewust op voordat je configuratie wijzigt.
+Shadow DOM-UI heeft eigen styles; de optionele `space2book.min.css` verzorgt
+hostknoppen. Laden is zichtbaar tot een geverifieerd `ready`-bericht. Inline vult
+de containerbreedte, begint met 600px en volgt geverifieerde resize-events tussen
+240 en 20.000px. Scrollen blijft mogelijk. Er is geen aparte inline-koppeling.
 
-Inline vult de breedte van de container. De standaard iframehoogte is 600px en kan
-na geverifieerde readiness door de adapter aangepast worden tussen 240 en 20.000px.
-De SDK zet geen `scrolling="no"`: zonder betrouwbare hoogte-informatie blijft de
-inhoud bereikbaar. De backend moet betrouwbare hoogte-events leveren om dubbele
-scrollbars bij lange formulieren te voorkomen.
+Herhaald laden/scannen maakt geen dubbele componenten. Verwijderde declaratieve
+elementen worden opgeruimd; terugplaatsen initialiseert opnieuw. Attribuutwijzigingen
+vervangen geen actief formulier. Ruim eerst bewust op bij configuratiewijzigingen.
 
-Volledige voorbeelden: [externe link](examples/external.html),
-[modal](examples/modal.html), [inline](examples/inline.html),
-[PHP-template](examples/template.php). PHP rendert dezelfde HTML met escaping;
-er is geen afzonderlijke PHP SDK.
+Voorbeelden: [externe link](examples/external.html), [modal](examples/modal.html),
+[inline](examples/inline.html), [PHP-template](examples/template.php).
+PHP rendert dezelfde HTML met escaping; er is geen afzonderlijke PHP SDK.
 
 ## Declaratieve attributen
 
 | Attribuut | Betekenis |
 | --- | --- |
-| `data-s2b-mode` | `external`, `modal` of `inline`. Modal vereist een echt `<button>`-element; gebruik voor de andere modi een container. |
-| `data-s2b-integration` | Vereist voor declaratieve modal en inline. Publieke identifier, geen secret. |
-| `data-s2b-url` | Expliciete publieke HTTPS-boekingslink. Vereist voor `external`; optionele afzonderlijke link bij embedfouten. |
-| `data-s2b-locale` | `nl`, `en` (standaard), `de`, `fr`, `es`. |
-| `data-s2b-text` | Tekst voor een gegenereerde externe knop. Schrijf modal-knoptekst rechtstreeks in HTML. |
-| `data-s2b-name` | Locatienaam in de modal- en iframetitel; veilig als tekst weergegeven. |
-| `data-s2b-color` | Zescijferige hexkleur voor gegenereerde Shadow DOM-controls. Ongeldige kleur gebruikt de standaard. |
-| `data-s2b-style-nonce` | Host-CSP-nonce voor style-elementen in Shadow DOM. |
+| `data-s2b-mode` | `external`, `modal` of `inline`; modal vereist een `<button>` |
+| `data-s2b-integration` | Vereist voor modal/inline; 64 kleine hextekens, publiek identifier |
+| `data-s2b-url` | Expliciete publieke HTTPS-link; vereist voor external, optionele afzonderlijke fallback bij embedfouten |
+| `data-s2b-locale` | `nl`, `en` (standaard), `de`, `fr`, `es` |
+| `data-s2b-text` | Tekst van gegenereerde externe knop; schrijf modal-knoptekst in HTML |
+| `data-s2b-name` | Locatienaam in hosttitels, veilig als tekst |
+| `data-s2b-color` | Zescijferige hexkleur voor hostcontrols |
+| `data-s2b-style-nonce` | De door de host per response gegenereerde CSP-nonce |
 
-Voor een SDK-gegenereerde externe knop kan een container gebruikt worden:
+Een gegenereerde externe knop gebruikt een container:
 
 ```html
 <div data-s2b-mode="external"
@@ -84,8 +77,8 @@ Voor een SDK-gegenereerde externe knop kan een container gebruikt worden:
      data-s2b-text="Boek direct" data-s2b-locale="nl"></div>
 ```
 
-Een gewone `<a>` heeft de voorkeur als JavaScript niet nodig is. Er bestaan geen
-HTML-attributen om adapters, endpoints, rechten, tokens of sandboxrechten te veranderen.
+Een gewone `<a>` heeft de voorkeur als JavaScript niet nodig is. HTML kan geen
+embedendpoint, adapter, autorisatie, credentials of sandboxrechten instellen.
 
 ## Programmeerbare API
 
@@ -93,119 +86,101 @@ HTML-attributen om adapters, endpoints, rechten, tokens of sandboxrechten te ver
 import { createSpace2Book } from './dist/index.js';
 
 const booking = createSpace2Book({
-  bookingUrl: 'https://mybooking.space2book.com/bf/PUBLIC_ID/venue',
-  integrationId: 'INTEGRATION_ID',
+  integrationId: 'INTEGRATION_ID', // vervangen door 64 kleine hextekens
   locale: 'nl',
+  // Optioneel: afzonderlijke publieke link, nooit als iframe gebruikt.
+  bookingUrl: 'https://mybooking.space2book.com/bf/PUBLIC_ID/venue',
   branding: { name: 'Onze locatie', color: '#2457A7' },
-  buttonText: 'Boek direct',
   onError: code => console.info('Space2Book:', code),
 });
-const link = booking.createLink(document.querySelector('#link'));
-const button = booking.createButton(document.querySelector('#button'));
 const inline = booking.mount(document.querySelector('#inline'));
+const button = booking.createButton(document.querySelector('#button'));
+const link = booking.createLink(document.querySelector('#link'));
+booking.open(document.querySelector('#eigen-knop')); // in een gebruikersactie
+booking.setLanguage('fr'); // hetzelfde iframe, actuele channel/instance
+booking.close(); // centrale sluitbeveiliging
 
-// In een gebruikersactie:
-booking.open(document.querySelector('#eigen-knop'));
-booking.close(); // Gebruikt dezelfde sluitbeveiliging als alle andere sluitacties.
-
-// Technische teardown, bijvoorbeeld bij het verwijderen van een frameworkcomponent:
-inline.destroy(); button.destroy(); link.destroy();
-booking.destroy();
+// Expliciete technische teardown, bijvoorbeeld bij verwijderen van een component:
+inline.destroy(); button.destroy(); link.destroy(); booking.destroy();
 ```
 
-Zonder geverifieerde adapter tonen modal en inline een foutmelding. Bovenstaande
-code claimt geen werkende productie-embedding. Voor alleen externe links is
-`integrationId` niet nodig. Voor embed-only configuratie is `bookingUrl` optioneel;
-er verschijnt dan geen publieke fallbacklink. Er moet minstens één van beide zijn.
+Voor alleen externe links is `integrationId` niet nodig. `bookingUrl` is optioneel
+voor embed-only gebruik; zonder deze optie verschijnt geen fallbacklink. Minstens
+één van beide is verplicht.
 
 | Methode | Gedrag |
 | --- | --- |
-| `createSpace2Book(options)` | Maakt een onafhankelijke instantie. ESM-import en factory zijn SSR-veilig. |
-| `open(trigger?)` | Lazy mount van de modal. Herhaald openen behoudt iframe en invoer en focust de bestaande modal. |
-| `close()` | Centrale sluitcoördinator; kan bevestiging tonen of sluiten blokkeren. |
-| `mount(container)` | Inline mount; herhaald aanroepen op dezelfde container retourneert hetzelfde handle. |
-| `createButton(container)` | Maakt een gestylede modal-trigger; retourneert een destroy-handle. |
-| `createLink(container)` | Maakt een externe boekingsknop met `_blank` en `noopener noreferrer`. Vereist `bookingUrl`. |
-| `destroy()` | Technische teardown van alle UI, listeners en timers van de instantie. Geen normale sluitroute. |
-| `initDeclarative(root?)` | Idempotente scan; handle ruimt alleen door deze scan aangemaakte elementen op. |
-| `observeDeclarative(document?)` | Eén gedeelde observer per document; initialiseert dynamische elementen en ruimt verwijderde op. |
-| `destroyDeclarative(document?)` | Stopt de automatische observer en ruimt diens componenten technisch op. |
+| `createSpace2Book(options)` | Onafhankelijke instantie; SSR-veilige factory en ESM-import |
+| `open(trigger?)` | Lazy modal; herhaald openen focust en behoudt de bestaande frame |
+| `close()` | Centrale coördinator voor veilig sluiten |
+| `mount(container)` | Inline; dezelfde container geeft hetzelfde handle |
+| `createButton(container)` | Gestylede modaltrigger en destroy-handle |
+| `createLink(container)` | Publieke link in nieuw tabblad; vereist `bookingUrl` |
+| `setLanguage(locale)` | Initialiseert volgende frames en stuurt taal naar actieve frames; backend negeert taalwissels als het formulier die blokkeert |
+| `destroy()` | Technische teardown van UI, listeners en timers; geen normale gebruikerssluitroute |
+| `initDeclarative(root?)` | Idempotente scan met destroy-handle |
+| `observeDeclarative(document?)` | Gedeelde observer voor toevoegen/verwijderen |
+| `destroyDeclarative(document?)` | Observer en bijbehorende componenten opruimen |
 
-De singleton `Space2Book` heeft `version`, `init(options)` en dezelfde methoden als
-een factory-instantie, plus de declaratieve functies. De browserbundle exposeert
-de singleton als `window.Space2Book`. Het door `init` geretourneerde object heeft
-ook de gewone instantie-API. `init` vervangt nooit een instantie met een actieve
-modal of inline mount; gebruik een factory of voer eerst expliciete teardown uit.
+`Space2Book` heeft `version`, `init(options)` en dezelfde methoden, plus de
+declaratieve functies. De browserbundle exposeert `window.Space2Book`.
+Een actieve singleton kan niet stilzwijgend vervangen worden. Er kan één modal
+per document actief zijn, naast meerdere onafhankelijke inlineframes.
 
 | Optie | Betekenis |
 | --- | --- |
-| `bookingUrl?: string` | Expliciete absolute HTTPS-link zonder credentials. |
-| `integrationId?: string` | Publieke identifier; 1–200 letters/cijfers, `_` of `-`. Definitieve backendvalidatie wacht op EMBED-1. |
-| `locale?: Locale` | Vijf bestaande talen; standaard Engels. Wordt meegegeven in adaptercontext. |
-| `branding?: {name?, color?}` | Host-UI; beïnvloedt de interne iframevormgeving niet. Tekstkleur wordt op contrast gekozen. |
-| `buttonText?: string` | Tekst voor gegenereerde buttons en links. |
-| `timeoutMs?: number` | Readiness-timeout, standaard 15.000ms; groter dan nul, maximaal 2.147.483.647. |
-| `styleNonce?: string` | Host-CSP-nonce voor SDK-style-elementen. |
-| `onError?: (code) => void` | Alleen `integration-disabled`, `integration-error`, `load-error` of `timeout`. |
-| `adapter?: IntegrationAdapter` | Vertrouwde code-extensie; voorlopig alleen expliciete fixtures of later een aantoonbaar geverifieerde contractadapter. |
+| `integrationId?: string` | Officieel publiek token van 64 kleine hextekens |
+| `bookingUrl?: string` | Expliciete absolute HTTPS-link zonder credentials |
+| `locale?: Locale` | Vijf talen; standaard Engels; host-UI kiest taal bij creatie |
+| `branding?: {name?, color?}` | Host-UI; verandert geen interne iframevormgeving |
+| `buttonText?: string` | Tekst van gegenereerde knoppen/links |
+| `timeoutMs?: number` | Handshaketimeout, standaard 15.000ms; >0 en ≤2.147.483.647 |
+| `styleNonce?: string` | Host-CSP-nonce voor SDK-style-elementen |
+| `onError?: (code) => void` | Alleen vaste SDK-/backendfoutcode; geen ruwe payload |
+| `adapter?: IntegrationAdapter` | Bestaand vertrouwd extensiepunt voor ontwikkelaars/tests; klant hoeft dit nooit te configureren |
 
-## Sluiten en formulierstatus
+## Formulierstatus en sluiten
 
-Alle normale sluitroutes (knop, backdrop, Escape, `close()` en iframeverzoek)
-gebruiken dezelfde coördinator. Het iframe is verborgen en niet interactief vóór
-geverifieerde readiness. Laden, een fout vóór interactie en succesvolle afronding
-mogen direct sluiten. Een interactief of gewijzigd formulier vraagt bevestiging.
-Annuleren behoudt dezelfde iframe-instantie, invoer en scrollpositie en geeft
-focus terug aan de hostcontrol of het iframe. Exact herstel van het laatst
-actieve veld binnen het cross-origin formulier vereist ondersteuning van het
-formulier zelf en moet met EMBED-1 worden gevalideerd.
-Escape in de bevestiging annuleert het sluiten.
+`ready` is geladen en bruikbaar, met `canClose=true`. `dirty` vraagt bevestiging;
+annuleren behoudt de oorspronkelijke frame, invoer en scroll. `submitting` en
+`uncertain` blokkeren alle sluitroutes en verbergen de publieke link. De SDK
+behoudt de frame voor een identieke retry binnen het backendformulier en boekt
+nooit zelf opnieuw. `completed` mag direct sluiten: de aanvraag is **verwerkt**,
+wat niet automatisch betaald of definitief bevestigd betekent.
 
-`submitting` en `uncertain` blokkeren sluiten en tonen uitleg. De publieke link
-wordt daarbij verborgen om een tweede aanvraag te voorkomen. Een submit die
-begint terwijl de bevestiging openstaat wordt vóór definitief sluiten opnieuw
-gecontroleerd. Zodra na readiness de statuscontrole wegvalt door een fout of herladen, blijft
-de iframecontext behouden maar wordt het iframe inert. De toestand wordt
-conservatief `uncertain`: sluiten en de publieke link blijven geblokkeerd, ook
-als de laatste bekende toestand nog interactief of dirty was. Verzendmeldingen
-volgen statuswijzigingen en verdwijnen na een geverifieerde afronding. De SDK probeert nooit zelf opnieuw te boeken.
+Knop, Escape/backdrop, API-close en backend-`close-request` gebruiken dezelfde
+coördinator. Een submit die tijdens de bevestiging begint wordt opnieuw gecontroleerd.
+Een gemelde backend-security-/renewalfout behoudt de laatst bekende sluitstatus
+en herstelbediening; een latere completion blijft mogelijk. Een echte trackingfout
+maakt de behouden frame inert en onzeker. Reload tijdens een onzekere aanvraag
+kan verloren gegevens niet reconstrueren en start geen nieuwe boeking.
 
-Er kan per document één modal actief zijn; inline kan daarnaast bestaan. Een
-andere instantie mag de actieve modal niet stilzwijgend vervangen: `open()` focust
-de bestaande modal en werpt een fout. De eigenaar sluit eerst via de coördinator.
-De singleton en declaratieve code respecteren dezelfde bescherming.
+De backend vertaalt zijn eigen sluitknop naar `close-request`. V1 stuurt geen
+algemeen Escape-event vanuit het cross-origin iframe; Escape op de host werkt
+via de coördinator. Focus kan naar de iframecontext terug, maar de host kan het
+laatst actieve veld binnen de cross-origin pagina niet uitlezen.
 
-Toetsen binnen een cross-origin iframe bereiken de host niet. De backendadapter
-moet Escape en eigen sluitacties naar het interne sluitverzoek vertalen. De
-fixture demonstreert dit; productiegedrag wacht op EMBED-1.
+## Fouten en CSP
 
-## Fouten, CSP en problemen oplossen
+Foutmeldingen zijn vertaald in vijf talen. `onError` en het declaratieve
+`s2b:error` (`detail: {code}`) bevatten alleen een vaste code. Integratie ontbreekt,
+inactief/ingetrokken, abonnementsrechten, domein, verlopen context, handshake,
+timeout en tijdelijke backenduitval worden onderscheiden als de backend een
+veilig bericht kan sturen. Een geweigerde initiële HTML-response is door CSP en
+browserisolatie niet uitleesbaar: die resulteert in timeout. Zie de
+[exacte foutcodes en grenzen](docs/backend-contract.md#foutcodes-en-de-waarneembaarheidsgrens).
 
-- `integration-disabled`: officiële adapter ontbreekt. Alleen een ID invullen is onvoldoende.
-- `integration-error`: ongeldige configuratie, endpoint of adapter. Controleer HTTPS, origin, schema en adapterversie.
-- `timeout`: geen geverifieerd `ready` binnen de termijn; controleer netwerk, CSP en het backendcontract.
-- `load-error`: iframe-/backendfout of onverwachte navigatie. De SDK voert geen automatische retries uit.
+Een expliciete publieke link opent alleen na een afzonderlijke gebruikersactie.
+Er zijn geen automatische retries, redirects of publieke iframefallbacks.
 
-Declaratieve elementen sturen `s2b:error` op het element met uitsluitend
-`detail: {code}`. Er worden geen berichten, persoonsgegevens of boekingsresultaten
-naar de website doorgestuurd. Configuratiefouten krijgen een toegankelijke melding.
-Embedfouten tonen een melding in de SDK-UI. Een expliciet geconfigureerde publieke
-link opent alleen na een afzonderlijke gebruikersactie.
+Host-CSP moet het SDK-script toestaan in `script-src` en **uitsluitend
+`https://api.space2book.com`** voor dit embed in `frame-src`. Bij strikte
+`style-src` geeft de host zijn response-nonce door via `styleNonce` of
+`data-s2b-style-nonce`. Voeg geen wildcard of `unsafe-inline` toe. De iframe gebruikt
+`sandbox="allow-scripts allow-forms allow-same-origin allow-popups"` en
+`referrerpolicy="no-referrer"`. De backend bepaalt eigen CSP/domeinrechten.
 
-Host-CSP moet het gepubliceerde SDK-script toestaan in `script-src`, de optionele
-CSS in `style-src`, en straks uitsluitend de officiële API-origin in `frame-src`.
-Shadow DOM-style-elementen vereisen een toegestane nonce bij strikte `style-src`;
-geef de **per response door de host gegenereerde nonce** door via `styleNonce` of
-`data-s2b-style-nonce`. Voeg geen `unsafe-inline`, wildcard of versoepelde iframepolicy toe.
-Het backenddocument moet zijn eigen `frame-ancestors` en requestautorisatie leveren.
-
-Controleer bij ontbrekende UI de browserconsole, CDN-MIME-types, CSP en de DOM.
-Laad één SDK-versie per pagina. Controleer bij een onbereikbaar embed de actieve
-koppeling, rechten en geregistreerde domeinen in Space2Book; de SDK kan die niet
-corrigeren. Als de submituitkomst onbekend is: houd het formulier open en dien
-niet opnieuw in. Los de uitkomst op via het backendproces zodra dat beschikbaar is.
-
-## Bouwen, testen en publiceren
+## Bouwen en testen
 
 Node.js 22.13+ of 24, npm, geen runtime-dependencies:
 
@@ -216,29 +191,20 @@ npm run lint
 npm test
 npx playwright install --with-deps chromium firefox webkit
 npm run test:browser
-npm run release
 ```
 
-`npm test` bouwt eerst. `dist/` bevat leesbare en geminificeerde browserbundles,
-ESM met source map, TypeScript declarations en optionele host-CSS. `release/sdk/1.0.0/`
-is een lokale publicatiemap met integriteitshashes. Een bestaande versiemap wordt
-nooit overschreven. [Publicatie-instructies](docs/distribution.md) beschrijven de
-website-origin `www.space2book.com/sdk/` en CDN-host `cdn.space2book.com/sdk/`.
-GitHub wordt niet als CDN-origin gebruikt. Geen Bunny- of afbeeldings-CDN-configuratie.
+`dist/` bevat leesbare/geminificeerde browserbundles, ESM met source map,
+TypeScript declarations en optionele host-CSS. [Distributie](docs/distribution.md)
+beschrijft lokale releasevoorbereiding; er wordt niets automatisch geüpload.
 
-Voor lokaal bekijken: bouw en serveer de repository, bijvoorbeeld met
-`python3 -m http.server 8000`, open `/examples/`. PHP-voorbeeld: `php -S localhost:8000`.
-De browserfixtures gebruiken twee echte lokale HTTPS-sites en geen productiebackend.
-Zie [testdekking en compatibiliteit](docs/testing.md).
+[Testing](docs/testing.md) scheidt synthetische SDK-tests van tests met de echte
+EMBED-1-implementatie en wegwerpdata. Moderne Chromium, Firefox en WebKit met
+Shadow DOM, inert en crypto zijn de doelen; de uitgevoerde matrix wordt daar
+expliciet gerapporteerd. Geen IE of polyfills. Geen frameworkpackages toegevoegd.
 
-Moderne Chromium, Firefox en Safari/WebKit met Shadow DOM, `inert`,
-`crypto.randomUUID()` en dynamische viewportunits zijn de doelen. Hostpagina's
-moeten via HTTPS worden aangeboden (localhost voor ontwikkeling). Geen IE of
-polyfills. Ondersteuning is geen claim dat elke browser in deze omgeving getest is.
-
-Toekomstige WordPress-, React-, Angular-, Vue- en PHP-wrappers gebruiken deze API
-met expliciete technische teardown. Er zijn nu geen frameworkpackages of WordPress-plugin toegevoegd.
-
-[Volledig SDK-1 eindrapport](docs/sdk-1-report.md).
+Voor lokale voorbeelden: bouw en serveer de repository met bijvoorbeeld
+`python3 -m http.server 8000` of `php -S localhost:8000`. Een echte embed vereist
+het in Space2Book geregistreerde HTTPS-domein en actieve backendconfiguratie;
+een willekeurige localhost-origin krijgt geen autorisatie.
 
 [MIT](LICENSE).

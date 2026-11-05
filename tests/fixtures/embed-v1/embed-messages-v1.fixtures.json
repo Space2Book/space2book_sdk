@@ -1,0 +1,92 @@
+[
+  {
+    "protocol": "space2book.embed",
+    "version": 1,
+    "channel": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "hello",
+    "payload": {}
+  },
+  {
+    "protocol": "space2book.embed",
+    "version": 1,
+    "channel": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "init",
+    "payload": {
+      "language": "en"
+    },
+    "instance": "sdk_instance_123456"
+  },
+  {
+    "protocol": "space2book.embed",
+    "version": 1,
+    "channel": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "language",
+    "payload": {
+      "language": "fr"
+    },
+    "instance": "sdk_instance_123456"
+  },
+  {
+    "protocol": "space2book.embed",
+    "version": 1,
+    "channel": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "ready",
+    "payload": {
+      "state": "ready",
+      "canClose": true
+    },
+    "instance": "sdk_instance_123456"
+  },
+  {
+    "protocol": "space2book.embed",
+    "version": 1,
+    "channel": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "error",
+    "payload": {
+      "code": "invalid_handshake"
+    },
+    "instance": "sdk_instance_123456"
+  },
+  {
+    "protocol": "space2book.embed",
+    "version": 1,
+    "channel": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "state",
+    "payload": {
+      "state": "uncertain",
+      "canClose": false
+    },
+    "instance": "sdk_instance_123456"
+  },
+  {
+    "protocol": "space2book.embed",
+    "version": 1,
+    "channel": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "completed",
+    "payload": {
+      "processed": true
+    },
+    "instance": "sdk_instance_123456"
+  },
+  {
+    "protocol": "space2book.embed",
+    "version": 1,
+    "channel": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "close-request",
+    "payload": {
+      "state": "dirty",
+      "canClose": false
+    },
+    "instance": "sdk_instance_123456"
+  },
+  {
+    "protocol": "space2book.embed",
+    "version": 1,
+    "channel": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "type": "resize",
+    "payload": {
+      "height": 1100
+    },
+    "instance": "sdk_instance_123456"
+  }
+]

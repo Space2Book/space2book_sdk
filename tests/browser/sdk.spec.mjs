@@ -63,7 +63,7 @@ test('redirect to another HTTPS origin cannot establish readiness', async ({ pag
   await expect(page.locator('iframe')).toHaveCount(0);
 });
 
-test('unverified production embedding is disabled and never uses public page fallback', async ({ page }) => {
+test('missing integration never uses public page as iframe fallback', async ({ page }) => {
   const frameRequests = [];
   page.on('request', req => { if (req.isNavigationRequest() && req.frame() !== page.mainFrame()) frameRequests.push(req.url()); });
   await page.goto('/?disabled'); await page.locator('#trigger').click();
@@ -114,11 +114,11 @@ test('declarative script autostart and duplicate loads preserve components with 
     document.querySelector('main').append(inline);
   });
   await page.addScriptTag({ url: '/dist/space2book.min.js' });
-  await expect(page.locator('#declarative').getByRole('alert')).toBeVisible();
+  await expect(page.locator('#declarative + [role="alert"]')).toBeVisible();
   await page.evaluate(() => { window.originalSDK = window.Space2Book; });
   await page.addScriptTag({ url: '/dist/space2book.min.js' });
   expect(await page.evaluate(() => window.originalSDK === window.Space2Book)).toBe(true);
-  expect(await page.locator('#declarative').evaluate(e => e.children.length)).toBe(1);
+  expect(await page.locator('#declarative').evaluate(e => e.children.length)).toBe(0);
   expect(await page.locator('#other').evaluate(e => getComputedStyle(e).borderTopWidth)).toBe('8px');
   await page.locator('#trigger').click();
   await expect(page.getByRole('dialog')).toBeVisible();

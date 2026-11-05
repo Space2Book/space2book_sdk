@@ -11,3 +11,72 @@ const translations = {
 export function translate(locale: Locale = 'en') {
   return translations[locale] ?? translations.en;
 }
+
+const errors = {
+  nl: {
+    missing: 'Deze boekingskoppeling is niet gevonden. Neem contact op met de locatie.',
+    inactive: 'Deze boekingskoppeling is niet actief. Neem contact op met de locatie.',
+    subscription: 'Online boeken via deze website is niet beschikbaar. Neem contact op met de locatie.',
+    domain: 'Dit boekingsformulier is niet beschikbaar op deze website.',
+    context: 'Deze boekingssessie is verlopen of ongeldig. Start opnieuw als je nog geen aanvraag hebt verzonden.',
+    handshake: 'Het boekingsformulier kon niet veilig worden geladen. Probeer het later opnieuw.',
+    timeout: 'Het laden duurt te lang. Controleer je verbinding en probeer het later opnieuw.',
+    temporary: 'Het boekingsformulier is tijdelijk niet beschikbaar. Probeer het later opnieuw.',
+  },
+  en: {
+    missing: 'This booking integration was not found. Please contact the venue.',
+    inactive: 'This booking integration is inactive. Please contact the venue.',
+    subscription: 'Booking through this website is unavailable. Please contact the venue.',
+    domain: 'This booking form is not available on this website.',
+    context: 'This booking session has expired or is invalid. Start again if you have not submitted a request.',
+    handshake: 'The booking form could not be loaded securely. Please try again later.',
+    timeout: 'Loading took too long. Check your connection and try again later.',
+    temporary: 'The booking form is temporarily unavailable. Please try again later.',
+  },
+  de: {
+    missing: 'Diese Buchungsintegration wurde nicht gefunden. Bitte kontaktiere den Veranstaltungsort.',
+    inactive: 'Diese Buchungsintegration ist inaktiv. Bitte kontaktiere den Veranstaltungsort.',
+    subscription: 'Buchen über diese Website ist nicht verfügbar. Bitte kontaktiere den Veranstaltungsort.',
+    domain: 'Dieses Buchungsformular ist auf dieser Website nicht verfügbar.',
+    context: 'Diese Buchungssitzung ist abgelaufen oder ungültig. Starte erneut, falls du noch keine Anfrage gesendet hast.',
+    handshake: 'Das Buchungsformular konnte nicht sicher geladen werden. Bitte versuche es später erneut.',
+    timeout: 'Das Laden dauert zu lange. Prüfe deine Verbindung und versuche es später erneut.',
+    temporary: 'Das Buchungsformular ist vorübergehend nicht verfügbar. Bitte versuche es später erneut.',
+  },
+  fr: {
+    missing: 'Cette intégration de réservation est introuvable. Contactez le lieu.',
+    inactive: 'Cette intégration de réservation est inactive. Contactez le lieu.',
+    subscription: 'La réservation via ce site est indisponible. Contactez le lieu.',
+    domain: 'Ce formulaire de réservation est indisponible sur ce site.',
+    context: 'Cette session a expiré ou est invalide. Recommencez si vous n’avez pas envoyé de demande.',
+    handshake: 'Le formulaire n’a pas pu être chargé de manière sécurisée. Réessayez plus tard.',
+    timeout: 'Le chargement prend trop de temps. Vérifiez votre connexion et réessayez plus tard.',
+    temporary: 'Le formulaire est temporairement indisponible. Réessayez plus tard.',
+  },
+  es: {
+    missing: 'No se ha encontrado esta integración de reservas. Contacta con el establecimiento.',
+    inactive: 'Esta integración de reservas está inactiva. Contacta con el establecimiento.',
+    subscription: 'Las reservas desde este sitio no están disponibles. Contacta con el establecimiento.',
+    domain: 'Este formulario de reservas no está disponible en este sitio.',
+    context: 'Esta sesión ha caducado o no es válida. Empieza de nuevo si no has enviado una solicitud.',
+    handshake: 'No se pudo cargar el formulario de forma segura. Inténtalo más tarde.',
+    timeout: 'La carga tarda demasiado. Comprueba tu conexión e inténtalo más tarde.',
+    temporary: 'El formulario no está disponible temporalmente. Inténtalo más tarde.',
+  },
+} as const;
+
+export function errorText(locale: Locale, code: import('./types').ErrorCode): string {
+  const messages = errors[locale];
+  switch (code) {
+    case 'integration_not_found': case 'booking_form_unavailable': return messages.missing;
+    case 'integration_inactive': return messages.inactive;
+    case 'subscription_required': return messages.subscription;
+    case 'domain_not_allowed': case 'invalid_domain_configuration': case 'integration_scope_denied': return messages.domain;
+    case 'embed_context_expired': case 'invalid_request_protection': return messages.context;
+    case 'invalid_handshake': return messages.handshake;
+    case 'timeout': return messages.timeout;
+    case 'temporarily_unavailable': case 'rate_limit_exceeded': return messages.temporary;
+    case 'integration-disabled': return translate(locale).disabled;
+    default: return translate(locale).error;
+  }
+}

@@ -50,7 +50,7 @@ afterEach(() => {
 });
 
 test('SSR-safe factory, version and strict public URL validation', () => {
-  assert.equal(VERSION, '1.0.0');
+  assert.equal(VERSION, '1.1.0');
   for (const url of ['javascript:alert(1)', 'http://example.invalid', '/relative', '******example.invalid']) {
     assert.throws(() => createSpace2Book({ bookingUrl: url }));
   }
@@ -297,7 +297,7 @@ test('singleton initialization is atomic and browser bundle exposes the same API
   assert.ok(modal());
   Space2Book.close();
   win.eval(readFileSync(new URL('../dist/space2book.min.js', import.meta.url), 'utf8'));
-  assert.equal(win.Space2Book.version, '1.0.0');
+  assert.equal(win.Space2Book.version, '1.1.0');
   win.Space2Book.init({ bookingUrl });
   win.Space2Book.open();
   assert.ok(modal());

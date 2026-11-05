@@ -77,6 +77,7 @@ export function createModal(options: SDKOptions, trigger?: HTMLElement): ModalHa
   const observer = new win.MutationObserver(makeInert);
   const handle: ModalHandle = {
     get active() { return !disposed; },
+    setLanguage(locale) { embed?.setLanguage?.(locale); },
     focus() { (confirmation?.querySelector('button') ?? closeButton).focus(); },
     requestClose() {
       if (disposed || confirmation) return;
@@ -86,7 +87,7 @@ export function createModal(options: SDKOptions, trigger?: HTMLElement): ModalHa
         notice.focus();
         return;
       }
-      if (!embed || ['loading', 'error', 'completed'].includes(embed.state)) {
+      if (!embed || embed.canClose) {
         handle.destroy();
         return;
       }
