@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://space2book.com/contracts/embed-messages-v1.schema.json",
+  "title": "Space2Book embed v1 messages",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol",
+    "version",
+    "channel",
+    "type",
+    "payload"
+  ],
+  "properties": {
+    "protocol": {
+      "const": "space2book.embed"
+    },
+    "version": {
+      "const": 1
+    },
+    "channel": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "instance": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{16,64}$"
+    },
+    "type": {
+      "enum": [
+        "hello",
+        "init",
+        "language",
+        "ready",
+        "error",
+        "state",
+        "completed",
+        "close-request",
+        "resize"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "hello"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {},
+            "required": []
+          }
+        },
+        "not": {
+          "required": [
+            "instance"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "init"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "language": {
+                "enum": [
+                  "nl",
+                  "en",
+                  "de",
+                  "fr",
+                  "es"
+                ]
+              }
+            },
+            "required": []
+          }
+        },
+        "required": [
+          "instance"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "language"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "language": {
+                "enum": [
+                  "nl",
+                  "en",
+                  "de",
+                  "fr",
+                  "es"
+                ]
+              }
+            },
+            "required": [
+              "language"
+            ]
+          }
+        },
+        "required": [
+          "instance"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "ready"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "state": {
+                "const": "ready"
+              },
+              "canClose": {
+                "const": true
+              }
+            },
+            "required": [
+              "state",
+              "canClose"
+            ]
+          }
+        },
+        "required": [
+          "instance"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "error"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^[a-z_]+$"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          }
+        },
+        "required": [
+          "instance"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "state"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "state": {
+                "enum": [
+                  "dirty",
+                  "submitting",
+                  "uncertain",
+                  "completed"
+                ]
+              },
+              "canClose": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "state",
+              "canClose"
+            ]
+          }
+        },
+        "required": [
+          "instance"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "completed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "processed": {
+                "const": true
+              }
+            },
+            "required": [
+              "processed"
+            ]
+          }
+        },
+        "required": [
+          "instance"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "close-request"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "state": {
+                "enum": [
+                  "initializing",
+                  "ready",
+                  "dirty",
+                  "submitting",
+                  "uncertain",
+                  "completed",
+                  "failed"
+                ]
+              },
+              "canClose": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "state",
+              "canClose"
+            ]
+          }
+        },
+        "required": [
+          "instance"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "resize"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "height": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "height"
+            ]
+          }
+        },
+        "required": [
+          "instance"
+        ]
+      }
+    }
+  ]
+}

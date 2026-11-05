@@ -1,5 +1,6 @@
 <?php
 // Public configuration only. Never render API keys, partner tokens or client secrets.
+// Replace with the active integration's public token: exactly 64 lowercase hex characters.
 $integrationId = 'INTEGRATION_ID';
 $bookingUrl = 'https://mybooking.space2book.com/bf/PUBLIC_ID/venue';
 function escapeAttribute(string $value): string

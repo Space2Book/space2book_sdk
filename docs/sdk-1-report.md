@@ -1,3 +1,6 @@
+> Historisch SDK-1-rapport. De hieronder beschreven ontbrekende backendadapter is
+> inmiddels vervangen door SDK-2; zie [actuele implementatie en testresultaten](sdk-2-report.md).
+
 # SDK-1 eindrapport
 
 Datum: 4 november 2026. Scope: uitsluitend `space2book_sdk`.

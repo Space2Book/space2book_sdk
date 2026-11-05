@@ -13,7 +13,7 @@ const adapter = {
   },
 };
 window.sdk = createSpace2Book({
-  integrationId: 'FIXTURE_ONLY',
+  ...(params.has('disabled') ? {} : { integrationId: 'FIXTURE_ONLY' }),
   bookingUrl: 'https://mybooking.space2book.com/bf/PUBLIC_ID/venue',
   styleNonce: 'fixture-style',
   timeoutMs: params.has('redirect') ? 300 : 5000,

@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.1.0 — SDK-2 (unpublished)
+
+- Automatically select the official Space2Book adapter for a 64-character lowercase
+  hexadecimal integration identifier; modal and inline use the secure API embed route.
+- Implement the real EMBED-1 v1 child hello / host init / verified ready protocol,
+  stable per-frame instance, fresh reload channels, exact origin/source/payload checks
+  and initialization and runtime language commands.
+- Honor ready/completed canClose, dirty discard confirmation, definitive validation
+  and identical-request retry transitions; preserve uncertain submits and recovery UI
+  across reported backend security/renewal errors.
+- Decode backend error codes into safe localized messages, bound inline resize,
+  and retain sandbox/CSP restrictions and explicit public-link fallbacks.
+- Add backend schema/fixture validation, protocol regressions and a read-only real
+  backend harness with disposable MySQL, actual filters/views/services and real submit.
+- Update HTML/PHP examples, declarations and documentation. No production/Bunny publication.
+- Backend reference: `Space2Book/s2b_dev@b8b9c2dbe84e0033d1865d44ebda48652eba8e36`,
+  `docs/integrations/webforms/embed-contract-v1.md`, protocol `space2book.embed` v1.
+
+### Copilot review corrections
+
+- Bind the native PHP fixture server to loopback by default; wildcard binding requires
+  explicit `S2B_TEST_PHP_BIND=0.0.0.0` inside an isolated container.
+- Retain each host component's creation language for loading/error/recovery text and
+  matching language metadata when changing the iframe language.
+- Validate JavaScript locales consistently on SDK options, the SDK method and mount
+  handles before changing handshake state, preserving normal timeout reporting.
+
 ## 1.0.0 — SDK-1 preparation
 
 - Preserve factory/singleton and Shadow DOM architecture; add idempotent declarative

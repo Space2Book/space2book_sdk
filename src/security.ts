@@ -18,3 +18,8 @@ export function brandTextColor(color: string): string {
   const luminance = channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
   return luminance > 0.179 ? '#000' : '#fff';
 }
+
+/** Public webform token, never a secret or a client-side authorization grant. */
+export function isIntegrationId(value: string): boolean {
+  return value.length === 64 && /^[a-f0-9]+$/.test(value);
+}

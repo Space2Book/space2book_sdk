@@ -7,7 +7,7 @@ npm ci
 npm run release
 ```
 
-Dit voert typecheck, lint, build en unittests uit en maakt `release/sdk/1.0.0/`.
+Dit voert typecheck, lint, build en unittests uit en maakt `release/sdk/1.1.0/`.
 Voer de browsermatrix apart uit vóór publicatie. De directory mag nog niet
 bestaan: een bestaande vaste versie wordt geweigerd. Verhoog voor een volgende
 release de versie in `package.json`, `package-lock.json` en `src/index.ts`, en werk
@@ -29,10 +29,10 @@ een tweede run overschrijft de vaste map nooit.
 Zorg dat statische bestanden leesbaar zijn voor de webserver (doorgaans bestanden
 0644 en directories 0755; pas dit aan het eigen hostingmodel aan).
 
-Upload de volledige inhoud van `release/sdk/1.0.0/` naar de website-origin:
+Upload de volledige inhoud van `release/sdk/1.1.0/` naar de website-origin:
 
 ```text
-https://www.space2book.com/sdk/1.0.0/
+https://www.space2book.com/sdk/1.1.0/
   space2book.js
   space2book.min.js
   space2book.css
@@ -44,7 +44,7 @@ https://www.space2book.com/sdk/1.0.0/
 ```
 
 De publieke CDN-URL heeft dezelfde structuur:
-`https://cdn.space2book.com/sdk/1.0.0/space2book.min.js`.
+`https://cdn.space2book.com/sdk/1.1.0/space2book.min.js`.
 `index.js` is een gebundelde ESM-build; de andere JS-bestanden zijn zelfstandige
 browserbundles. De source map hoort uitsluitend bij ESM en bevat publieke
 SDK-broncode, geen credentials. De geminificeerde browserbundle heeft geen source map.
@@ -57,7 +57,7 @@ vorige alias volledig; verwijderde bestanden blijven niet achter. Een mislukte
 vervanging probeert de vorige alias te herstellen en bewaart de backup als dat
 niet lukt. Vaste versiemappen blijven onaangeraakt.
 
-`1.0.0` blijft onveranderlijk; `v1` is bewust veranderlijk en kan na verificatie
+`1.1.0` blijft onveranderlijk; `v1` is bewust veranderlijk en kan na verificatie
 ook teruggezet worden op een eerdere vaste V1-release. Geen bestanden van
 historische versies verwijderen of overschrijven. Controleer op de origin
 vóór upload dat het vaste versienummer nog niet gepubliceerd is; het lokale
@@ -92,12 +92,16 @@ GitHub is uitsluitend de bronrepository, nooit CDN-origin.
 ## HTML bij een locatie
 
 ```html
-<link rel="stylesheet" href="https://cdn.space2book.com/sdk/1.0.0/space2book.min.css">
-<script defer src="https://cdn.space2book.com/sdk/1.0.0/space2book.min.js"></script>
+<link rel="stylesheet" href="https://cdn.space2book.com/sdk/1.1.0/space2book.min.css">
+<script defer src="https://cdn.space2book.com/sdk/1.1.0/space2book.min.js"></script>
 ```
 
 De CSS is optioneel voor bestaande hostknoppen; Shadow DOM-UI heeft eigen geïsoleerde
 styles. Strikte CSP gebruikt de nonce-optie uit de README. Gebruik vaste
 versiepaden voor reproduceerbare integraties; kies `/v1/` alleen als automatische
-V1-updates gewenst zijn. Een CDN-publicatie activeert embedding niet zolang de
-geverifieerde productieadapter ontbreekt.
+V1-updates gewenst zijn. De officiële EMBED-1-adapter is ingebouwd. De API moet daarnaast correct geconfigureerd
+en geactiveerd zijn, met een actieve koppeling voor het geregistreerde HTTPS-domein.
+
+SDK-2 is lokale releasevoorbereiding: geen productiepublicatie, Bunny-wijziging of
+V1-aliasupdate is uitgevoerd. Publiceer 1.1.0 en de V1-alias pas na gezamenlijke
+integratieacceptatie; behoud eerder gepubliceerde vaste versies.

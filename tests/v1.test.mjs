@@ -205,18 +205,18 @@ test('public /bf pages, absent messaging and untrusted origin cannot be embedded
   }
 });
 
-test('integration-only options do not fabricate public fallback links or iframe endpoints', () => {
+test('integration-only options select the official endpoint without fabricating public fallback links', () => {
   const { container } = setup();
-  const sdk = createSpace2Book({ integrationId: 'INTEGRATION_ID', locale: 'nl' }); instances.push(sdk);
+  const sdk = createSpace2Book({ integrationId: 'a'.repeat(64), locale: 'nl' }); instances.push(sdk);
   sdk.mount(container);
-  assert.equal(container.lastChild.shadowRoot.querySelector('iframe'), null);
+  assert.equal(container.lastChild.shadowRoot.querySelector('iframe').src, 'https://api.space2book.com/webforms/embed/' + 'a'.repeat(64));
   assert.equal(container.lastChild.shadowRoot.querySelector('a'), null);
   assert.throws(() => sdk.createLink(container), /bookingUrl/);
 });
 
 test('declarative scans, double script load, dynamic removal and reinitialization are safe', async () => {
   const { container, win } = setup();
-  container.innerHTML = '<button data-s2b-mode="modal" data-s2b-integration="ID">Book</button><div data-s2b-mode="inline" data-s2b-integration="ID"></div>';
+  container.innerHTML = '<button data-s2b-mode="modal" data-s2b-integration="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">Book</button><div data-s2b-mode="inline" data-s2b-integration="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"></div>';
   const observer = observeDeclarative(document); observers.push(observer);
   assert.equal(observeDeclarative(document), observer);
   observers.push(initDeclarative(document));
@@ -295,6 +295,7 @@ test('synchronous declarative error handlers can stop observation without leavin
   const observer = observeDeclarative(document); observers.push(observer);
   assert.equal(element.children.length, 0);
   // Disposed handles are idempotent and must not disconnect the next observer.
+  element.dataset.s2bIntegration = 'a'.repeat(64);
   const next = observeDeclarative(document); observers.push(next);
   observer.destroy();
   assert.notEqual(next, observer);

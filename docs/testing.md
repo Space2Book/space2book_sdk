@@ -1,18 +1,8 @@
-# Testdekking en browsercompatibiliteit
+# SDK-2 testen en verificatiegrenzen
 
-## Soorten bewijs
+## Reproduceerbare SDK-controles
 
-- Node/jsdom-tests controleren DOM-logica, statusovergangen, genormaliseerde
-  messagevalidatie, teardown, declaratieve initialisatie en releasestructuur.
-  Zij bewijzen geen echte iframecommunicatie, CSP of cookiegedrag.
-- Playwright gebruikt echte lokale HTTPS-servers: host `https://localhost:9443`
-  en iframe `https://127.0.0.1:9444`. Dit zijn verschillende origins én verschillende
-  sites. Een tijdelijk self-signed certificaat wordt in `work/tls/` gemaakt;
-  alleen de tests accepteren dit certificaat. Productie schakelt TLS-validatie niet uit.
-- De browseradapter, endpoints en payloads zijn expliciete fixtures. Deze tests
-  bewijzen geen echte backendautorisatie, boekingen of EMBED-1-conformiteit.
-
-## Uitvoeren
+Node.js 22.13+ of 24:
 
 ```sh
 npm ci
@@ -23,94 +13,102 @@ npx playwright install --with-deps chromium firefox webkit
 npm run test:browser
 ```
 
-Op een omgeving met een systeem-Chromium:
+Bij een aanwezige systeem-Chromium:
 
 ```sh
 S2B_CHROMIUM_PATH=/usr/bin/chromium npm run test:browser -- --project=chromium
 ```
 
-Die optie verandert alleen het testexecutable. Er worden geen downloads via
-alternatieve mirrors of omzeilingen van netwerkbeleid gebruikt. De certificaat-
-fixture vereist `openssl`. Tests luisteren uitsluitend lokaal op poorten 9443/9444;
-maak die vrij voordat de suite start. De CI voert unitchecks uit op Node 22 en 24
-op Linux en Windows en biedt een aparte browserjob op Node 24.
+`npm test` bouwt browserbundles, ESM en declarations en draait alle unitbestanden.
+De Node 24-runner toont hier bestandsresultaten; `node tests/embed-v1.test.mjs`
+toont de afzonderlijke cases. De protocoltests valideren de echte backendfixtures
+met het ongewijzigde Draft 2020-12-schema via Ajv, naast adversariële berichten.
 
-## Afgedekte gedragingen
+`tests/sdk.test.mjs`, `tests/v1.test.mjs`, `tests/release.test.mjs` en
+`tests/browser/*` blijven synthetische SDK-/lifecycle-/distributietests. De oude
+`tests/fixtures/adapter.mjs` is expliciet geen productieprotocol. Het browserharnas
+gebruikt twee lokale HTTPS-origins onder CSP met third-party-cookiecontroles,
+Shadow DOM, focus/sluitbevestiging, teardown, reloads en meerdere instanties.
 
-Externe link: exacte publieke URL, nieuw tabblad, rel-beveiliging, aangepaste tekst,
-geen integration-ID en een HTML-voorbeeld zonder script. Bestaande URL-validatietests
-controleren onveilige schema's, credentials en relatieve URL's.
+`tests/embed-v1.test.mjs` test de officiële adapter met het echte wireprotocol,
+maar een synthetisch MessageEvent/DOM. Dit is geen echte HTTP-backendtest.
+Dekking: childchannel/hostinstance, alle hello/load/ready-volgordes, duplicaten,
+foute origins/windows/versies/instances/payloads, retired channels/reload,
+timeout, taal, resize, completed/close, validatie/retry-overgangen, verlopen
+context, fouten tijdens submit, onafhankelijke modal/inlineframes, declaratieve
+initialisatie en alle backendfoutcodes in vijf talen.
 
-Modal: alle vijf sluitroutes, interactieve/dirty-status, annuleren met behoud van
-iframe/scroll/focus, submit tijdens de bevestiging, submitting/uncertain, completed,
-herhaald openen, conflicterende instanties, focusinperking en focusherstel,
-vooraf bestaande inert-/scrollstatus, dynamisch toegevoegde achtergrondcontent,
-lokalisatie en mobiele fullscreenweergave.
+## Echte SDK + EMBED-1-integratietest
 
-Inline: idempotente mount, meerdere kanalen/instanties, begrensde hoogte-events,
-verwijderen, opnieuw initialiseren, fouten en teardown. De browserfixture verifieert
-modal plus inline tegelijk op echte HTTPS-origins.
+`tests/backend/real.test.mjs` gebruikt de **officiële adapter zonder endpointoverride**,
+met `https://api.space2book.com/webforms/embed/{token}` in Chromium. De browser
+resolveert uitsluitend testnamen naar een lokale HTTPS-server met een tijdelijk
+self-signed certificaat. Er worden geen productiehosts of productiegegevens geraakt.
+De hostorigin is `https://voorbeeld.nl`; `https://denied.nl` is de verboden variant.
 
-Messaging: exacte origin en source vóór de decoder, versie/channelcontrole,
-onbekende events/statussen, onverwachte payloadvelden, oude sources/channels,
-ready vóór load, load zonder ready, navigatie/reload, timeout en adapterfouten.
-Readiness volgt pas na de eerste load en het geverifieerde adapterevent. Een
-nieuwe load invalideert de bestaande context, zonder onzekere submitstatus te wissen.
+Het SDK-eigen `tests/backend/router.php` is afgeleid van de gelezen backendfixture.
+Het laadt de echte CodeIgniter-routes, filters, controllers, gedeelde bookingformview,
+search/compose/bridge en services uit de read-only backendcheckout. Alleen de
+omgevingsorigin, runtime-schrijfmap en expliciete fixture-scenario's zijn lokaal.
+Backendbestanden zijn niet gewijzigd. PHP runtime/cache/security-state schrijft
+onder `space2book_sdk/work/`. Tests gebruiken geïsoleerde SQLite-fixtures voor
+reads en de bestaande bewaakte **`s2b_public_tests`** MySQL-fixture voor echte submits.
+Deze fixture wist tabellen; gebruik een aparte wegwerpserver en draai serial.
 
-De Chromium-cookieproef stelt via CDP expliciet third-party-cookierestricties in.
-De iframe-response probeert een synthetische `Secure; SameSite=None`-cookie te
-zetten; de test controleert dat het frame die niet kan lezen en dat de fixtureflow
-blijft werken. Dat bewijst cookie-onafhankelijkheid van de SDK-fixture, niet van
-het nog ontbrekende productieformulier. Dezelfde specifieke CDP-proef wordt
-expliciet overgeslagen in Firefox/WebKit.
+Vereisten: OpenSSL, Playwright/Chromium, vrije loopbackpoorten 443 en 8097, PHP 8.3
+met de Composer-locked backendafhankelijkheden en benodigde extensies, en een
+expliciet geactiveerde wegwerp-MySQL-database. De backend staat standaard op
+`../s2b_dev/app.space2book.com`; override met `S2B_BACKEND_APP`.
 
-Releases: vaste versiemappen worden nooit overschreven; `v1` wijzigt alleen na
-expliciete opt-in en elke nieuwe vaste versie krijgt een integriteitsmanifest.
+```sh
+S2B_PUBLIC_TEST_MYSQL=1 \
+S2B_PUBLIC_TEST_HOST=127.0.0.1 S2B_PUBLIC_TEST_PORT=33316 \
+S2B_PUBLIC_TEST_USER=root S2B_PUBLIC_TEST_PASSWORD='' \
+S2B_CHROMIUM_PATH=/usr/bin/chromium S2B_TEST_PHP=/path/to/php \
+npm run test:backend
+```
 
-## Uitvoering in deze opdracht
+Een al gestarte lokale PHP-testserver kan gebruikt worden met `S2B_TEST_PHP_EXTERNAL=1`.
+Die server moet de SDK-router draaien met `S2B_BACKEND_APP`,
+`S2B_SDK_TEST_WRITEPATH` en de wegwerpdatabasevariabelen ingesteld.
+Het harnas start of stopt die externe server niet. Bind ook die native server aan loopback.
 
-Op 4 november 2026 zijn de Chromium-tests uitgevoerd op systeem-Chromium
-155.0.8059.79. De acht browsertests slagen, inclusief CSP zonder `unsafe-inline`,
-echte cross-site messaging en expliciet geblokkeerde third-party cookies.
+Een PHP-containerwrapper moet de vier databasevariabelen en `S2B_PUBLIC_TEST_MYSQL`,
+`S2B_BACKEND_APP`, `S2B_SDK_TEST_WRITEPATH` doorgeven. Mount de backend read-only,
+de SDK read/write, publiceer alleen `127.0.0.1:8097:8097` en verbind alleen met de
+wegwerp-MySQL-server. Native PHP bindt standaard uitsluitend aan `127.0.0.1:8097`.
+Alleen voor een geïsoleerde container kan expliciet `S2B_TEST_PHP_BIND=0.0.0.0`
+worden ingesteld; dan draait PHP zijn router op `0.0.0.0:8097` binnen die container.
+Andere bindwaarden worden geweigerd. Zorg dat de wrapper bij SIGTERM ook zijn container stopt.
 
-Firefox en WebKit konden niet lokaal worden geïnstalleerd: de browserdownload
-vanaf `cdn.playwright.dev` wordt door het omgevingsnetwerkbeleid geweigerd met
-HTTP 403 `Domain forbidden`. De volledige matrix is vervolgens daadwerkelijk
-in GitHub Actions uitgevoerd: Chromium 156.0.8078.4, Firefox 157.0 en WebKit 27.2.
-**22 tests slagen; twee Chromium-specifieke cookieproeven zijn bewust overgeslagen
-in Firefox en WebKit.** De gecorrigeerde test wacht op de zichtbare SDK-status,
-omdat `postMessage` asynchroon wordt afgeleverd. De bestaande unitproef dekt
-een submit die begint terwijl de sluitbevestiging al openstaat.
+Het harnas blokkeert externe assets/providers en cookie/web-storagegebruik.
+Succesvolle API-antwoorden worden **niet gemockt**. Alleen de eerste submit wordt
+bewust afgebroken en één renewal krijgt een geïnjecteerde 503. Vervolgens moet
+een byte-identieke retry de echte transactieservices bereiken en `completed`
+opleveren. De backendstorage-double geeft geen echte terms-PDF-URL; de popuptest
+gebruikt de echte voorwaardenlink met een expliciet lokale externe testdocument-URL.
+Dit is een sandboxtest, geen productie-PDF-providercontrole.
 
-Bewijs: [CI-run 41836904139](https://github.com/Space2Book/space2book_sdk/actions/runs/41836904139),
-gevalideerde broncommit `075b5134259b08b26ee7c2f84ef841acaee65b9a`.
+## Resultaten van 5 november 2026
 
-De unit-/DOM-suite omvat na de Copilot-review 51 testgevallen (14 bestaande,
-35 V1-regressies en twee releasetests). Raadpleeg het eindrapport voor de laatste uitvoerresultaten.
+De definitieve aantallen en commandoresultaten staan in [SDK-2-rapport](sdk-2-report.md).
+De aanvankelijke complete Playwright-matrix kon browsers niet starten omdat hun
+binaries ontbraken. De download van `cdn.playwright.dev` is door het omgevingsbeleid
+geweigerd (403 Domain forbidden). Chromium is daarna met de aanwezige systeembrowser
+uitgevoerd. Firefox en WebKit zijn hier **niet geverifieerd**; geen geslaagde matrixclaim.
 
-## Nog te verifiëren met EMBED-1
+## Grenzen voor acceptatie
 
-Geen actieve of ingetrokken productie-integratie, domein-/abonnementsweigering,
-expiratie, directe boeking, offerte, optie, verloren beschikbaarheid, prijswijziging,
-voorwaardenwijziging of dubbele boeking is tegen een echte backend getest.
-Deze flows vereisen het definitieve contract en testaccounts/venues. De SDK maakt
-geen boekingen en simuleert daarvoor geen productiesucces.
-
-Doelbrowsers zijn actuele Chromium, Firefox en Safari/WebKit met Shadow DOM,
-`inert`, `crypto.randomUUID()` en `dvh`. Geen IE, oude WebViews of automatische
-polyfills. Exact herstel van het laatst actieve cross-origin formulierveld kan de host
-niet controleren of afdwingen; dit is een expliciete EMBED-1-validatie.
-Cross-origin iframe-toegankelijkheid, schermlezers en keyboardgedrag
-van het echte formulier moeten ook door de backend worden gevalideerd.
-
-
-## Copilot-review verwerkt
-
-De regressies controleren verlies van statuscontrole na readiness (reload,
-iframe-/backendfout en decoderfout), blokkeren van sluiten/fallback en behoud van
-een inert iframe, verouderde mount-handles, automatisch bijgewerkte verzendmeldingen
-en een schone aliasvervanging zonder oude bestanden. De lokale Node 22/24-checks
-en tien Chromium-tests slagen. De CI-matrix omvat nu ook Windows voor beide
-Node-versies om build, tests en pakketinspectie op echte Windows-runners te toetsen.
-De laatste CI-status staat op PR #3; de eerder gekoppelde run is de oorspronkelijke
-validatie vóór deze reviewcorrecties.
+- Dit bewijst SDK-integratie met de echte backendcode op wegwerpfixtures, geen
+  staging-/productieaccount of volledige productie-AppBoot.
+- Initiële HTTP-denials worden apart gecontroleerd; de host kan hun specifieke
+  foutcode niet lezen en toont conform contract timeout. Runtimecodes worden wel verwerkt.
+- Geen productie-CSP/XFO/CDN-edgeheaders, echte klantaccounts, mail/storage/paymentproviders,
+  checkout, mobiele WebViews of Safari/Firefox getest.
+- Een afgebroken submit vóór verwerking plus byte-identieke echte retry is getest.
+  Een committed response die verloren gaat is hier niet afzonderlijk gesimuleerd;
+  de backend-idempotencytests behandelen dat scenario, maar zijn niet opnieuw als
+  onderdeel van deze SDK-run geclaimd.
+- Geen eigen boekings-API, capabilities in hostevents, productieboekingen of
+  Bunny-/productiepublicatie. Gezamenlijke acceptatie controleert de resterende
+  browsermatrix, echte accountconfiguratie en infrastructuur.

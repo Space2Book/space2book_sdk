@@ -63,7 +63,7 @@ test('redirect to another HTTPS origin cannot establish readiness', async ({ pag
   await expect(page.locator('iframe')).toHaveCount(0);
 });
 
-test('unverified production embedding is disabled and never uses public page fallback', async ({ page }) => {
+test('missing integration never uses public page as iframe fallback', async ({ page }) => {
   const frameRequests = [];
   page.on('request', req => { if (req.isNavigationRequest() && req.frame() !== page.mainFrame()) frameRequests.push(req.url()); });
   await page.goto('/?disabled'); await page.locator('#trigger').click();
@@ -114,11 +114,11 @@ test('declarative script autostart and duplicate loads preserve components with 
     document.querySelector('main').append(inline);
   });
   await page.addScriptTag({ url: '/dist/space2book.min.js' });
-  await expect(page.locator('#declarative').getByRole('alert')).toBeVisible();
+  await expect(page.locator('#declarative + [role="alert"]')).toBeVisible();
   await page.evaluate(() => { window.originalSDK = window.Space2Book; });
   await page.addScriptTag({ url: '/dist/space2book.min.js' });
   expect(await page.evaluate(() => window.originalSDK === window.Space2Book)).toBe(true);
-  expect(await page.locator('#declarative').evaluate(e => e.children.length)).toBe(1);
+  expect(await page.locator('#declarative').evaluate(e => e.children.length)).toBe(0);
   expect(await page.locator('#other').evaluate(e => getComputedStyle(e).borderTopWidth)).toBe('8px');
   await page.locator('#trigger').click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -155,3 +155,16 @@ for (const failure of ['reload', 'backend-error']) {
     expect(await page.locator('#other').evaluate(e => e.inert)).toBe(true);
   });
 }
+
+test('iframe language changes preserve the language of host recovery messages', async ({ page }) => {
+  await page.goto('/'); await page.locator('#trigger').click();
+  await expect(page.locator('iframe')).toBeVisible();
+  await page.evaluate(() => window.sdk.setLanguage('fr'));
+  const frame = page.frames().find(f => f.url().startsWith('https://127.0.0.1:9444'));
+  await frame.evaluate(() => parent.postMessage({
+    version: 1, channelId: new URLSearchParams(location.search).get('channel'), type: 'error',
+  }, 'https://localhost:9443'));
+  await expect(page.locator('.content')).toHaveAttribute('lang', 'en');
+  await expect(page.locator('.content [role="alert"]')).toContainText('The result of your request is unknown.');
+  await expect(page.getByRole('button', { name: 'Close', exact: true })).toHaveText('Close');
+});
